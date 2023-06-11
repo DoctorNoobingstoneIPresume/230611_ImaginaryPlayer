@@ -1,0 +1,8 @@
+= [2023-06-11] ImaginaryPlayer
+:docinfo: shared
+:date:    2023-06-11
+:toc:     macro
+
+== README
+
+Example of Worker Threads and Message Passing (as opposed to lower-level synchronization).

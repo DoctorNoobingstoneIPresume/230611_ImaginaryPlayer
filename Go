@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e -o pipefail
+
+Main ()
+{
+	printf "Building...\n{\n"
+	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
+	perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
+	printf "}\n\n"
+}
+
+Main "$@"
