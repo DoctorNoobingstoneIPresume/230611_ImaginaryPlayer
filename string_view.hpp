@@ -17,8 +17,8 @@ namespace lyb
  using boost::basic_string_view;
  using boost::      string_view;
 #else
- using std::basic_string_view;
- using std::      string_view;
+ using std  ::basic_string_view;
+ using std  ::      string_view;
 #endif
 
 }
