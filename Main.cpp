@@ -18,5 +18,7 @@ int main ()
 	// [2023-06-17] TODO: In the following line, if we replace braces with parentheses, the thread is not run ! Why ?
 	const auto Logger_jthread (ScopedWorkerThread {Logger_spWorker});
 	
+	Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "Surprise !\n"; return Worker::WorkItemRV (0); }));
+	
 	std::cout << "Buh-bye, Imaginary World !\n" << std::flush;
 }

@@ -27,6 +27,8 @@ class Worker
 		Break_Mask                    = 1 << 0,
 		Break_0                       = 0,
 		Break_1                       = Break_Mask,
+		
+		All_Mask                      = (1 << 1) - 1
 	};
 	
 	typedef

@@ -22,15 +22,81 @@ void
 Worker::ThreadFn
 (const std::shared_ptr <Worker> &spWorker)
 {
+	// [2023-06-17]
+	//   We keep the `Worker` alive and we no longer use the reference to the original `shared_ptr` (we shadow it)
+	//   because that original `shared_ptr` might be modified/destroyed (on another thread, e.g. the spawner thread).
 	std::shared_ptr <Worker> loc_spWorker (spWorker);
-	class spWorker; // [2023-06-17] Please only use loc_spWorker.
+	class spWorker;
+	Worker *const loc_pWorker {loc_spWorker.get ()};
 	
 	std::cout << "Worker::ThreadFn.\n" << std::flush;
+	
+	for (;;)
+	{
+		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
+		const TimeRep dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait () : -1};
+		
+		std::cv_status status;
+		
+		std::unique_lock <std::mutex> lock (loc_pWorker->_mtx);
+		while (loc_pWorker->_contspWorkItems.empty ())
+		{
+			status = loc_pWorker->_cv.wait_until
+			(
+				lock,
+				std::chrono::steady_clock::now () + std::chrono::milliseconds (dtWait >= 0 ? dtWait : 1000 * 60)
+			);
+			
+			if (status == std::cv_status::timeout && dtWait >= 0)
+				break;
+		}
+		
+		decltype (loc_pWorker->_contspWorkItems) loc_contspWorkItems;
+		{
+			loc_contspWorkItems.swap (loc_pWorker->_contspWorkItems);
+		}
+		
+		lock.unlock ();
+		
+		bool bEndRequested {false};
+		for (const auto &spWorkItem: loc_contspWorkItems)
+		{
+			if (! spWorkItem)
+				{ bEndRequested = true; break; }
+			
+			const auto rv {(*spWorkItem) ()};
+			Azzert ((rv & All_Mask) == rv);
+			if ((rv & Break_Mask) != Break_0)
+				{ bEndRequested = true; break; }
+		}
+		
+		if (bEndRequested)
+			break;
+		
+		if (status == std::cv_status::timeout && dtWait >= 0)
+		{
+			Azzert (loc_pWorker->_pImpl);
+			const auto rv {loc_pWorker->_pImpl->OnTimeout ()};
+			if ((rv & Break_Mask) != Break_0)
+				break;
+		}
+	}
+}
+
+void
+Worker::AddWorkItem
+(const std::shared_ptr <WorkItem> &spWorkItem)
+{
+	std::unique_lock <std::mutex> lock (_mtx);
+	_contspWorkItems.push_back (spWorkItem);
+	lock.unlock ();
+	_cv.notify_all ();
 }
 
 ScopedWorkerThread::~ScopedWorkerThread ()
 {
 	std::cout << "Joinable ?\n" << std::flush;
+	_spWorker->AddWorkItem (nullptr);
 	_thread.join ();
 }
 
