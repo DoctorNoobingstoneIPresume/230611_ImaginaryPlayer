@@ -3,11 +3,14 @@
 #include "_FwdConfig.hpp"
 #include "string_view.hpp"
 
+#include <utility>
 #include <chrono>
 #include <cstdint>
 
+
 namespace ImaginaryPlayer
 {
+
 
 using std::uint8_t; using std::uint16_t; using std::uint32_t; using std::uint64_t; using std::uintmax_t; using std::uintptr_t;
 using std:: int8_t; using std:: int16_t; using std:: int32_t; using std:: int64_t; using std:: intmax_t; using std:: intptr_t;
@@ -49,7 +52,54 @@ AzzertionHasFailed
 	      lyb::string_view  sFunctionName
 );
 
+
+// ScopeGuard (based on Andrei Alexandrescu's work) (also on Bjarne's 4th Edition, 13.3.1 - class template `Final_action`):
+
+template <typename F>
+class ScopeGuard
+{
+ private:
+	      F                 _f;
+
+ public:
+	~ScopeGuard ()
+	{
+		_f ();
+	}
+	
+	void swap (ScopeGuard &rhs) noexcept
+	{
+		using std::swap;
+		swap (_f, rhs._f);
+	}
+	
+	ScopeGuard (ScopeGuard &&rhs) noexcept:
+		_f {std::move (rhs._f)}
+	{}
+	
+	ScopeGuard &operator= (ScopeGuard &&rhs) noexcept
+	{
+		ScopeGuard tmp (std::move (rhs));
+		swap (tmp);
+		return *this;
+	}
+	
+	explicit ScopeGuard (F &&f):
+		_f {std::forward <F> (f)}
+	{}
+};
+
+template <typename F>
+ScopeGuard <F> MakeScopeGuard (F &&f)
+{
+	return ScopeGuard <F> {std::forward <F> (f)};
 }
+
+
+} // end namespace
+
+
+// Azzertion macros:
 
 #define ImaginaryPlayer_Azzert_Msg(bCondition, sMessage) \
 	do \
@@ -71,3 +121,4 @@ AzzertionHasFailed
 	#define Azzert_Msg ImaginaryPlayer_Azzert_Msg
 	#define Azzert     ImaginaryPlayer_Azzert
 #endif
+
