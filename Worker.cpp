@@ -29,7 +29,7 @@ Worker::ThreadFn
 	class spWorker;
 	Worker *const loc_pWorker {loc_spWorker.get ()};
 	
-	std::cout << "Worker::ThreadFn.\n" << std::flush;
+	std::cout << "{ Worker::ThreadFn\n" << std::flush;
 	
 	for (;;)
 	{
@@ -81,6 +81,8 @@ Worker::ThreadFn
 				break;
 		}
 	}
+	
+	std::cout << "} Worker::ThreadFn\n" << std::flush;
 }
 
 void
