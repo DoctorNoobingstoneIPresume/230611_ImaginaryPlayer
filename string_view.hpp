@@ -10,6 +10,8 @@
  #include <string_view>
 #endif
 
+#include <string>
+
 namespace lyb
 {
 
@@ -20,5 +22,8 @@ namespace lyb
  using std  ::basic_string_view;
  using std  ::      string_view;
 #endif
+
+// [2023-06-20] This is only needed for converting `boost::string_view` to `std::string`.
+std::string ViewToString (string_view sv);
 
 }
