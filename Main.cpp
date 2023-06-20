@@ -1,5 +1,6 @@
 #include "Worker.hpp"
 #include "WorkerImpl.hpp"
+#include "WorkerImpl_Player.hpp"
 
 #include <iostream>
 #include <string>
@@ -20,8 +21,11 @@ int main ()
 		const auto guardPreviouslyTied {MakeScopeGuard ([=] () { std::cin.tie (posPreviouslyTied); })};
 		
 		const auto Logger_spWorker {std::make_shared <Worker> ()};
-		// [2023-06-17] TODO: In the following line, if we replace braces with parentheses, the thread is not run ! Why ?
-		const auto Logger_jthread (ScopedWorkerThread {Logger_spWorker});
+		// [2023-06-17] TODO: In the following line, if we replace the inner braces with parentheses, the thread is not run ! Why ?
+		const auto Logger_jthread {ScopedWorkerThread {Logger_spWorker}};
+		
+		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (Logger_spWorker))};
+		const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
 		
 		Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "Surprise !\n"; return Worker::WorkItemRV (0); }));
 		

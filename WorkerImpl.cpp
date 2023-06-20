@@ -6,7 +6,7 @@ namespace ImaginaryPlayer
 WorkerImpl::~WorkerImpl ()
 = default;
 
-TimeRep WorkerImpl::GetTimeToWait () const
+TimeRep WorkerImpl::GetTimeToWait ()
 {
 	const auto rv = Do_GetTimeToWait ();
 	// [2023-06-15] TODO: A facility for azzertions (alwayz-enabled-assertions).
@@ -15,7 +15,7 @@ TimeRep WorkerImpl::GetTimeToWait () const
 	return rv;
 }
 
-Worker::WorkItemRV WorkerImpl::OnTimeout () const
+Worker::WorkItemRV WorkerImpl::OnTimeout ()
 {
 	const auto rv = Do_OnTimeout ();
 	Azzert ((rv & Worker::All_Mask) == rv);

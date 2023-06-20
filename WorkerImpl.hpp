@@ -21,12 +21,12 @@ class WorkerImpl:
 	virtual ~WorkerImpl () = 0;
 
  private:
-	virtual TimeRep Do_GetTimeToWait () const = 0;
-	virtual Worker::WorkItemRV Do_OnTimeout () const = 0;
+	virtual TimeRep Do_GetTimeToWait () = 0;
+	virtual Worker::WorkItemRV Do_OnTimeout () = 0;
 
  public:
-	TimeRep GetTimeToWait () const;
-	Worker::WorkItemRV OnTimeout () const;
+	TimeRep GetTimeToWait ();
+	Worker::WorkItemRV OnTimeout ();
 };
 
 }
