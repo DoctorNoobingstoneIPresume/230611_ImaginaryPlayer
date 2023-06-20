@@ -5,14 +5,14 @@ namespace ImaginaryPlayer
 
 Player::Player (const std::shared_ptr <Worker> &spWorkerLogger):
 	_spWorkerLogger {spWorkerLogger},
-	_contSongs      {Song {}.SetLength (10 * 1000), Song {}.SetLength (15 * 1000)},
+	_contSongs      {Song {}.SetLength (std::chrono::seconds {10}), Song {}.SetLength (std::chrono::seconds {15})},
 	_dtWithinSong   {0},
 	_bPlaying       {false}
 {}
 
-TimeRep Player::GetTimeToWait ()
+Duration Player::GetTimeToWait ()
 {
-	return -1;
+	return Duration {-1};
 }
 
 Worker::WorkItemRV Player::OnTimeout ()

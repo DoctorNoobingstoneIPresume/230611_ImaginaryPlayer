@@ -34,7 +34,7 @@ Worker::ThreadFn
 	for (;;)
 	{
 		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
-		const TimeRep dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait () : -1};
+		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait () : Duration {-1}};
 		
 		std::cv_status status;
 		
@@ -44,10 +44,10 @@ Worker::ThreadFn
 			status = loc_pWorker->_cv.wait_until
 			(
 				lock,
-				std::chrono::steady_clock::now () + std::chrono::milliseconds (dtWait >= 0 ? dtWait : 1000 * 60)
+				std::chrono::steady_clock::now () + (dtWait >= Duration {0} ? dtWait : Duration {1000 * 60})
 			);
 			
-			if (status == std::cv_status::timeout && dtWait >= 0)
+			if (status == std::cv_status::timeout && dtWait >= Duration {0})
 				break;
 		}
 		
@@ -73,7 +73,7 @@ Worker::ThreadFn
 		if (bEndRequested)
 			break;
 		
-		if (status == std::cv_status::timeout && dtWait >= 0)
+		if (status == std::cv_status::timeout && dtWait >= Duration {0})
 		{
 			Azzert (loc_pWorker->_pImpl);
 			const auto rv {loc_pWorker->_pImpl->OnTimeout ()};

@@ -15,7 +15,7 @@ class Player
  private:
 	      std::shared_ptr <Worker>          _spWorkerLogger;
 	      std::deque <Song>                 _contSongs;
-	      TimeRep                           _dtWithinSong;
+	      Duration                          _dtWithinSong;
 	      bool                              _bPlaying;
 	      TimePoint                         _tLastPlaying;
 
@@ -23,7 +23,7 @@ class Player
 	Player (const std::shared_ptr <Worker> &spWorkerLogger);
 
  public:
-	TimeRep GetTimeToWait ();
+	Duration GetTimeToWait ();
 	Worker::WorkItemRV OnTimeout ();
 };
 

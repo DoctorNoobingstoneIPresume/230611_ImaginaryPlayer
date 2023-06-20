@@ -6,12 +6,12 @@ namespace ImaginaryPlayer
 WorkerImpl::~WorkerImpl ()
 = default;
 
-TimeRep WorkerImpl::GetTimeToWait ()
+Duration WorkerImpl::GetTimeToWait ()
 {
 	const auto rv = Do_GetTimeToWait ();
 	// [2023-06-15] TODO: A facility for azzertions (alwayz-enabled-assertions).
 	// [2023-06-17] Done.
-	Azzert (rv >= -1);
+	Azzert (rv >= Duration {-1});
 	return rv;
 }
 

@@ -19,8 +19,8 @@ std::string       Song::GetCodecName   ()                       const { return _
 lyb::string_view  Song::GetCodecNameQ  ()                       const { return _sCodecName; }
 Song             &Song::SetCodecName   (lyb::string_view value)       { _sCodecName  = lyb::ViewToString (value); return *this; }
 
-TimeRep           Song::GetLength      ()                       const { return _dtLength; }
-Song             &Song::SetLength      (TimeRep value)                { _dtLength = value; return *this; }
+Duration          Song::GetLength      ()                       const { return _dtLength; }
+Song             &Song::SetLength      (Duration value)               { _dtLength = value; return *this; }
 
 Song::Song ():
 	_dtLength {0}
@@ -37,7 +37,7 @@ std::ostream &Song::Put (std::ostream &os) const
 			<< ", "
 			<< "codec"  " \"" << _sCodecName  << "\""
 			<< ", "
-			<< "length" " "   << _dtLength;
+			<< "length" " "   << _dtLength.count ();
 	}
 	
 	return os << osTmp.str ();

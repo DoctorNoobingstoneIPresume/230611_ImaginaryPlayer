@@ -17,7 +17,7 @@ class WorkerImpl_Player:
 	WorkerImpl_Player (const std::shared_ptr <Player> &spPlayer);
 
  private:
-	TimeRep Do_GetTimeToWait () override;
+	Duration Do_GetTimeToWait () override;
 	Worker::WorkItemRV Do_OnTimeout () override;
 };
 

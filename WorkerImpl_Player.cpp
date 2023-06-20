@@ -8,7 +8,7 @@ WorkerImpl_Player::WorkerImpl_Player (const std::shared_ptr <Player> &spPlayer):
 	_spPlayer {spPlayer}
 {}
 
-TimeRep WorkerImpl_Player::Do_GetTimeToWait () // override
+Duration WorkerImpl_Player::Do_GetTimeToWait () // override
 {
 	return _spPlayer->GetTimeToWait ();
 }

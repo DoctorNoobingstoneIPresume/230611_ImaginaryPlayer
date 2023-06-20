@@ -16,7 +16,7 @@ class Song
 	      std::string                       _sArtistName;
 	      std::string                       _sSongName;
 	      std::string                       _sCodecName;
-	      TimeRep                           _dtLength;
+	      Duration                          _dtLength;
 
  public:
 	std::string       GetArtistName  ()                       const;
@@ -31,8 +31,8 @@ class Song
 	lyb::string_view  GetCodecNameQ  ()                       const;
 	Song             &SetCodecName   (lyb::string_view value);
 	
-	TimeRep           GetLength      ()                       const;
-	Song             &SetLength      (TimeRep value);
+	Duration          GetLength      ()                       const;
+	Song             &SetLength      (Duration value);
 
  public:
 	Song ();
