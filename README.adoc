@@ -6,3 +6,11 @@
 == README
 
 Example of Worker Threads and Message Passing (as opposed to lower-level synchronization).
+
+== Building the Project
+
+Bash script for the impatient:
+
+```
+set -o pipefail; readarray -t as < <(ls *.cpp | grep -Piv "_UT"); printf "%s\n" "${as[@]}"; xtimeq g++ -pthread -std="gnu++17" -g "${as[@]}" -o "Main" 2>&1 | tee "_go"
+```

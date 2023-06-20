@@ -26,7 +26,9 @@ Worker::ThreadFn
 	//   We keep the `Worker` alive and we no longer use the reference to the original `shared_ptr` (we shadow it)
 	//   because that original `shared_ptr` might be modified/destroyed (on another thread, e.g. the spawner thread).
 	std::shared_ptr <Worker> loc_spWorker (spWorker);
-	class spWorker;
+	// [2023-06-21]
+	//   Newer versions of g++ do not allow such shadowing.
+	//class spWorker;
 	Worker *const loc_pWorker {loc_spWorker.get ()};
 	
 	std::cout << "{ Worker::ThreadFn\n" << std::flush;

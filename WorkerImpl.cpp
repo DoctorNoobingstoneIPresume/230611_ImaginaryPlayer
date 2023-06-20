@@ -4,7 +4,7 @@ namespace ImaginaryPlayer
 {
 
 TimePoint        WorkerImpl::Arg::Now ()                const { return _tNow; }
-WorkerImpl::Arg &WorkerImpl::Arg::Now (TimePoint value)       { _tNow = value; }
+WorkerImpl::Arg &WorkerImpl::Arg::Now (TimePoint value)       { _tNow = value; return *this; }
 
 WorkerImpl::Arg::Arg ():
 	_tNow {Now ()}
