@@ -1,4 +1,5 @@
 #include "Player.hpp"
+#include "WorkerImpl.hpp"
 
 namespace ImaginaryPlayer
 {
@@ -11,20 +12,21 @@ Player::Player (const std::shared_ptr <Worker> &spWorkerLogger):
 	_tLastPlaying   {Now ()}
 {}
 
-Duration Player::GetTimeToWait ()
+Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 {
 	if (_bPlaying && ! _contSongs.empty ())
 	{
 		const Song &song {_contSongs.front ()};
 		const Duration dtSongLength {song.GetLength ()};
 		Azzert (_dtWithinSong <= dtSongLength);
+		_tLastPlaying = arg.Now ();
 		return dtSongLength - _dtWithinSong;
 	}
 	else
 		return Duration {-1};
 }
 
-Worker::WorkItemRV Player::OnTimeout ()
+Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 {
 	return Worker::Break_0;
 }

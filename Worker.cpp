@@ -36,7 +36,9 @@ Worker::ThreadFn
 		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
 		const auto tNow = Now ();
 		
-		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait () : Duration {-1}};
+		const auto arg = WorkerImpl::Arg {}.Now (tNow);
+		
+		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait (arg) : Duration {-1}};
 		
 		std::cv_status status;
 		
@@ -78,7 +80,7 @@ Worker::ThreadFn
 		if (status == std::cv_status::timeout && dtWait >= Duration {0})
 		{
 			Azzert (loc_pWorker->_pImpl);
-			const auto rv {loc_pWorker->_pImpl->OnTimeout ()};
+			const auto rv {loc_pWorker->_pImpl->OnTimeout (arg)};
 			if ((rv & Break_Mask) != Break_0)
 				break;
 		}

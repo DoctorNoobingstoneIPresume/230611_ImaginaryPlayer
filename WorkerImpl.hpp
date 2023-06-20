@@ -14,19 +14,37 @@ namespace ImaginaryPlayer
 //     (2) performs a specific function when the timeout has expired.
 //   A Worker object can aggregate a WorkerImpl-derived object which specifies the exact behaviour.
 
+
 class WorkerImpl:
 	private noncopyable
 {
  public:
+	class Arg
+	{
+	 public:
+		typedef Arg ThisType;
+	
+	 private:
+		      TimePoint                 _tNow;
+	
+	 public:
+		TimePoint  Now ()                const;
+		ThisType  &Now (TimePoint value);
+	
+	 public:
+		Arg ();
+	};
+
+ public:
 	virtual ~WorkerImpl () = 0;
 
  private:
-	virtual Duration Do_GetTimeToWait () = 0;
-	virtual Worker::WorkItemRV Do_OnTimeout () = 0;
+	virtual Duration Do_GetTimeToWait (const Arg &arg) = 0;
+	virtual Worker::WorkItemRV Do_OnTimeout (const Arg &arg) = 0;
 
  public:
-	Duration GetTimeToWait ();
-	Worker::WorkItemRV OnTimeout ();
+	Duration GetTimeToWait (const Arg &arg);
+	Worker::WorkItemRV OnTimeout (const Arg &arg);
 };
 
 }

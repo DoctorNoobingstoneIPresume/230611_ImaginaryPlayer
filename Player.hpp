@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Worker.hpp"
+#include "WorkerImpl.hpp"  // [2023-06-20] For `WorkerImpl::Arg`.
 #include "Song.hpp"
 
 #include <chrono>
@@ -23,8 +24,8 @@ class Player
 	Player (const std::shared_ptr <Worker> &spWorkerLogger);
 
  public:
-	Duration GetTimeToWait ();
-	Worker::WorkItemRV OnTimeout ();
+	Duration GetTimeToWait (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV OnTimeout (const WorkerImpl::Arg &arg);
 };
 
 }
