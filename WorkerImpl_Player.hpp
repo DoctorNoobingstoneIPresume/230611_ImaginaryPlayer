@@ -1,3 +1,5 @@
+#pragma once
+
 #include "WorkerImpl.hpp"
 #include "Song.hpp"
 

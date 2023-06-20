@@ -1,3 +1,5 @@
+#pragma once
+
 #include "_Fwd.hpp"
 
 #include "string_view.hpp"
