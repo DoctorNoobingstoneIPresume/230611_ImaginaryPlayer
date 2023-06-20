@@ -22,6 +22,8 @@ typedef int TimeRep;
 typedef std::ratio <1, 1000> TimePeriod;
 typedef std::chrono::duration <TimeRep, TimePeriod> Duration;
 typedef std::chrono::time_point <std::chrono::steady_clock, Duration> TimePoint;
+TimePoint Now    ();
+Duration  Now_dt ();
 
 
 // Azzertions (always enabled assertions):

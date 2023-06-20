@@ -7,6 +7,16 @@
 namespace ImaginaryPlayer
 {
 
+TimePoint Now ()
+{
+	return std::chrono::time_point_cast <Duration> (std::chrono::steady_clock::now ());
+}
+
+Duration Now_dt ()
+{
+	return Now ().time_since_epoch ();
+}
+
 [[noreturn]]
 void
 AzzertionHasFailed_Msg

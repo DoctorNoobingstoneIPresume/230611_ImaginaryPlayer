@@ -34,6 +34,8 @@ Worker::ThreadFn
 	for (;;)
 	{
 		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
+		const auto tNow = Now ();
+		
 		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait () : Duration {-1}};
 		
 		std::cv_status status;
@@ -44,7 +46,7 @@ Worker::ThreadFn
 			status = loc_pWorker->_cv.wait_until
 			(
 				lock,
-				std::chrono::steady_clock::now () + (dtWait >= Duration {0} ? dtWait : Duration {1000 * 60})
+				tNow + (dtWait >= Duration {0} ? dtWait : Duration {1000 * 60})
 			);
 			
 			if (status == std::cv_status::timeout && dtWait >= Duration {0})
