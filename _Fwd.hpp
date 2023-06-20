@@ -19,7 +19,9 @@ using std:: int8_t; using std:: int16_t; using std:: int32_t; using std:: int64_
 // Representationf and type of time units:
 
 typedef int TimeRep;
-typedef std::chrono::milliseconds TimePeriod;
+typedef std::ratio <1, 1000> TimePeriod;
+typedef std::chrono::duration <TimeRep, TimePeriod> Duration;
+typedef std::chrono::time_point <std::chrono::steady_clock, Duration> TimePoint;
 
 
 // Azzertions (always enabled assertions):

@@ -1,5 +1,6 @@
 #include "Worker.hpp"
 #include "WorkerImpl.hpp"
+#include "Player.hpp"
 #include "WorkerImpl_Player.hpp"
 
 #include <iostream>
@@ -24,7 +25,9 @@ int main ()
 		// [2023-06-17] TODO: In the following line, if we replace the inner braces with parentheses, the thread is not run ! Why ?
 		const auto Logger_jthread {ScopedWorkerThread {Logger_spWorker}};
 		
-		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (Logger_spWorker))};
+		const auto spPlayer {std::make_shared <Player> (Logger_spWorker)};
+		
+		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (spPlayer))};
 		const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
 		
 		Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "Surprise !\n"; return Worker::WorkItemRV (0); }));
