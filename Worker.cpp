@@ -25,7 +25,7 @@ Worker::ThreadFn
 	// [2023-06-17]
 	//   We keep the `Worker` alive and we no longer use the reference to the original `shared_ptr` (we shadow it)
 	//   because that original `shared_ptr` might be modified/destroyed (on another thread, e.g. the spawner thread).
-	std::shared_ptr <Worker> loc_spWorker (spWorker);
+	const std::shared_ptr <Worker> loc_spWorker {spWorker};
 	// [2023-06-21]
 	//   Newer versions of g++ do not allow such shadowing.
 	//class spWorker;
@@ -57,10 +57,12 @@ Worker::ThreadFn
 				break;
 		}
 		
-		decltype (loc_pWorker->_contspWorkItems) loc_contspWorkItems;
-		{
-			loc_contspWorkItems.swap (loc_pWorker->_contspWorkItems);
-		}
+		// [2023-06-24]
+		//decltype (loc_pWorker->_contspWorkItems) loc_contspWorkItems;
+		//{
+		//	loc_contspWorkItems.swap (loc_pWorker->_contspWorkItems);
+		//}
+		const auto loc_contspWorkItems = std::move (loc_pWorker->_contspWorkItems);
 		
 		lock.unlock ();
 		
@@ -103,18 +105,18 @@ Worker::AddWorkItem
 
 ScopedWorkerThread::~ScopedWorkerThread ()
 {
-	std::cout << "Joinable ?\n" << std::flush;
+	std::cout << "Joinable " << _thread.joinable () << ".\n" << std::flush;
 	_spWorker->AddWorkItem (nullptr);
 	_thread.join ();
 }
 
-ScopedWorkerThread::ScopedWorkerThread (ScopedWorkerThread &&rhs) = default;
+ScopedWorkerThread::ScopedWorkerThread (ScopedWorkerThread &&rhs) noexcept = default;
 
-ScopedWorkerThread &ScopedWorkerThread::operator= (ScopedWorkerThread &&rhs) = default;
+ScopedWorkerThread &ScopedWorkerThread::operator= (ScopedWorkerThread &&rhs) noexcept = default;
 
 ScopedWorkerThread::ScopedWorkerThread (const std::shared_ptr <Worker> &spWorker):
-	_spWorker (spWorker),
-	_thread   ([spWorker] () { Worker::ThreadFn (spWorker); })
+	_spWorker {spWorker},
+	_thread   {[&spWorker] () { Worker::ThreadFn (spWorker); }}
 {}
 
 }

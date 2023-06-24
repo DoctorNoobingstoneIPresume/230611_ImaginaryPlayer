@@ -79,10 +79,10 @@ class ScopedWorkerThread
 
  public:
 	~ScopedWorkerThread ();
-	ScopedWorkerThread (ScopedWorkerThread &&rhs);
-	ScopedWorkerThread &operator= (ScopedWorkerThread &&rhs);
+	ScopedWorkerThread (ScopedWorkerThread &&rhs) noexcept;
+	ScopedWorkerThread &operator= (ScopedWorkerThread &&rhs) noexcept;
 	
-	ScopedWorkerThread (const std::shared_ptr <Worker> &spWorker);
+	explicit ScopedWorkerThread (const std::shared_ptr <Worker> &spWorker);
 };
 
 }
