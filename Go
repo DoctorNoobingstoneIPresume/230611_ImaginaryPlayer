@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e -o pipefail
 
+ytimeq ()
+{
+	TIME="TimeQ: elapsed %E (ring3 %U, ring0 %S, CPU %P)." "$(which time)" "$@"
+}
+
 Main ()
 {
 	printf "Building...\n{\n"
 	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
-	CXX='g++' CXXFLAGS='-std="gnu++17" -D"IMAGINARYPLAYER_STRING_VIEW_BOOST=1"' perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
+	CXX='g++' CXXFLAGS='-std="gnu++17" -D"IMAGINARYPLAYER_STRING_VIEW_BOOST=1"' ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
 	printf "}\n\n"
 }
 
