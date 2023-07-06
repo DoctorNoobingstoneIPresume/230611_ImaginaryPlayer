@@ -10,7 +10,7 @@ Main ()
 {
 	printf "Building...\n{\n"
 	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
-	CXX='g++' CXXFLAGS='-std="gnu++17" -D"IMAGINARYPLAYER_STRING_VIEW_BOOST=1"' ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
+	CXX='g++' CXXFLAGS='-std="gnu++17" -D"IMAGINARYPLAYER_STRING_VIEW_BOOST=1" -D"IMAGINARYPLAYER_OPTIONAL_BOOST=1"' ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
 	printf "}\n\n"
 }
 
