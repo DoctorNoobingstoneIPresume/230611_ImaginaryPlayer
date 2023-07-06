@@ -126,3 +126,13 @@ ScopeGuard <F> MakeScopeGuard (F &&f)
 	#define Azzert     ImaginaryPlayer_Azzert
 #endif
 
+
+// nelems:
+
+// [2023-07-06] TODO:
+//   This implementation of nelems prevents `a` from being a variable with user-defined `operator[]`
+//   (by using `0 [a]` instead of `(a) [0]`) (and this is good),
+//   but it still allows `a` to be a raw pointer
+//   (and this is bad).
+//   Only built-in arrays should be allowed.
+#define nelems(a) ((sizeof (a) / sizeof (0 [a])))
