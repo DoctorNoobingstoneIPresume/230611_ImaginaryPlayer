@@ -1,5 +1,6 @@
 #include "Lexer.hpp"
 #include "InputRange.hpp"
+#include "InputRange_SV.hpp" // [2023-07-07] For `Tokenize_paren`.
 
 #ifndef IMAGINARYPLAYER_Lexer_iDebug
  #define IMAGINARYPLAYER_Lexer_iDebug 0
@@ -130,6 +131,24 @@ Tokenize
 	else
 		// [2023-07-06] TODO: Return or output `iRow` and `iCol` so the user can see where exactly lexing has failed ?
 		return lyb::none;
+}
+
+lyb::optional <std::vector <Token>>
+Tokenize_paren
+(std::istream &is, char cParenLeft, char cParenRite)
+{
+	std::string s;
+	{
+		if (! getline_paren (is, s, cParenLeft, cParenRite))
+			return lyb::none;
+	}
+	
+	InputRange_SV <char> inputrange (lyb::string_view {s});
+	auto result = Tokenize (&inputrange, std::use_facet <std::ctype <char>> (is.getloc ()));
+	if (! result)
+		is.setstate (std::ios_base::failbit);
+	
+	return result;
 }
 
 }
