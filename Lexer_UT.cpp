@@ -1,6 +1,8 @@
 #include "Lexer.hpp"
 #include "InputRange_SV.hpp"
 
+#include <cstring>
+
 int main ()
 {
 	using namespace ImaginaryPlayer;
@@ -32,6 +34,6 @@ int main ()
 		const std::size_t nTokens = nelems (apszTokens);
 		Azzert (result->size () == nTokens);
 		for (std::size_t iToken = 0; iToken < nTokens; ++iToken)
-			Azzert ((*result).at (iToken).GetText () == apszTokens [iToken]);
+			Azzert (! std::strcmp ((*result).at (iToken).GetTextQ ().data (), apszTokens [iToken]));
 	}
 }
