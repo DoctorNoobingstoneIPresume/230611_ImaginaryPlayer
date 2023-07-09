@@ -39,8 +39,13 @@ class Song
 
  public:
 	std::ostream &Put (std::ostream &os) const;
+	std::istream &Get (std::istream &is);
 };
 
 std::ostream &operator<< (std::ostream &os, const Song &object);
+std::istream &operator>> (std::istream &is,       Song &object);
+
+bool operator== (const Song &x, const Song &y);
+bool operator!= (const Song &x, const Song &y);
 
 }

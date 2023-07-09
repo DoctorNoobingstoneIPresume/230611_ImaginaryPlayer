@@ -1,6 +1,7 @@
 #include "Lexer.hpp"
 #include "InputRange.hpp"
 #include "InputRange_SV.hpp" // [2023-07-07] For `Tokenize_paren`.
+#include "Cursor.hpp"
 
 #ifndef IMAGINARYPLAYER_Lexer_iDebug
  #define IMAGINARYPLAYER_Lexer_iDebug 0
@@ -71,7 +72,9 @@ Tokenize
 			else
 			if (iState == 10)
 			{
-				Azzert (! bTokenIsEmpty);
+				// [2023-07-09]
+				//   The token might be empty in state 10, for example if it starts with two quotes characters.
+				//Azzert (! bTokenIsEmpty);
 				
 				if (! c || ctype.is (std::ctype_base::space, c))
 					{ contTokens.push_back (std::move (token)); token = Token {}; iState = 0; }
@@ -133,6 +136,102 @@ Tokenize
 		return lyb::none;
 }
 
+lyb::optional <Token>
+ExtractToken
+(std::istream &is, Cursor *pCursor)
+{
+	Token token;
+	bool bSuccess {true};
+	{
+		const std::ctype <char> &ctype {std::use_facet <std::ctype <char>> (is.getloc ())};
+		
+		unsigned iState = 0;
+		while (is)
+		{
+			const auto c_int {is.get ()};
+			const char c     {static_cast <char> (c_int == std::char_traits <char>::eof () ? 0 : c_int)};
+			
+			const bool bTokenIsEmpty {token.GetTextQ ().empty ()};
+			
+			if (! iState)
+			{
+				Azzert (bTokenIsEmpty);
+				
+				if (! c)
+					{ bSuccess = false; break; }
+				else
+				if (ctype.is (std::ctype_base::space, c))
+					;
+				else
+				if (ctype.is (std::ctype_base::alnum, c))
+					{ if (pCursor) token.SetFrom (*pCursor); token.AddText (c); iState = 10; }
+				else
+				if (c == '\"')
+					{ if (pCursor) token.SetFrom (*pCursor); iState = 11; }
+				else
+					{ if (pCursor) token.SetFrom (*pCursor); token.AddText (c); break; }
+			}
+			else
+			if (iState == 10)
+			{
+				if (! c)
+					break;
+				else
+				if (ctype.is (std::ctype_base::space, c))
+					{ is.putback (c); break; }
+				else
+				if (ctype.is (std::ctype_base::alnum, c))
+					token.AddText (c);
+				else
+				if (c == '\"')
+					iState = 11;
+				else
+					{ is.putback (c); break; }
+			}
+			else
+			if (iState == 11)
+			{
+				if (! c)
+					{ bSuccess = false; break; }
+				else
+				if (c == '\"')
+					iState = 10;
+				else
+				if (c == '\\')
+					iState = 12;
+				else
+					token.AddText (c);
+			}
+			else
+			if (iState == 12)
+			{
+				if (! c)
+					{ bSuccess = false; break; }
+				else
+					{ token.AddText (c); iState = 11; }
+			}
+			else
+				Azzert (0);
+			
+			if (pCursor)
+				pCursor->Process (c);
+			
+			Azzert (c);
+		}
+	}
+	
+	if (bSuccess)
+	{
+		Azzert (! token.GetTextQ ().empty ());
+		return token;
+	}
+	else
+	{
+		is.setstate (std::ios_base::failbit);
+		return lyb::none;
+	}
+}
+
 lyb::optional <std::vector <Token>>
 Tokenize_paren
 (std::istream &is, char cParenLeft, char cParenRite)
@@ -151,4 +250,106 @@ Tokenize_paren
 	return result;
 }
 
+lyb::optional <int64_t>
+ExtractIntegral
+(std::istream &is)
+{
+	int64_t rv {0};
+	bool bSuccess {false};
+	bool bNegative {false};
+	{
+		const std::ctype <char> &ctype {std::use_facet <std::ctype <char>> (is.getloc ())};
+		
+		unsigned iState = 0;
+		while (is)
+		{
+			const auto c_int {is.get ()};
+			const char c     {static_cast <char> (c_int == std::char_traits <char>::eof () ? 0 : c_int)};
+			
+			if (! iState)
+			{
+				if (! c)
+					{ bSuccess = false; break; }
+				else
+				if (ctype.is (std::ctype_base::space, c))
+					;
+				else
+				if (c == '-')
+					{ bNegative = ! bNegative; }
+				else
+				if (c == '+')
+					;
+				if (c == '0')
+					iState = 9;
+				else
+				if (c >= '1' && c <= '9')
+					{ rv = c - '0'; iState = 10; }
+				else
+					{ bSuccess = false; break; }
+			}
+			else
+			if (iState == 9)
+			{
+				if (! c)
+					{ bSuccess = true; break; }
+				else
+				if (c == 'x' || c == 'X')
+					iState = 16;
+				else
+				if (c >= '0' && c <= '9')
+					{ rv = c - '1'; iState = 10; }
+				else
+					{ is.putback (c); bSuccess = false; break; }
+			}
+			else
+			if (iState == 10)
+			{
+				if (! c)
+					{ bSuccess = true; break; }
+				else
+				if (c >= '0' && c <= '9')
+					{ rv = rv * 10 + c - '0'; }
+				else
+				if (ctype.is (std::ctype_base::space, c))
+					{ is.putback (c); bSuccess = true; break; }
+				else
+					{ is.putback (c); bSuccess = false; break; }
+			}
+			else
+			if (iState == 16)
+			{
+				if (! c)
+					{ bSuccess = true; break; }
+				else
+				if (c >= '0' && c <= '9')
+					{ rv = rv * 16 + c - '0'; }
+				else
+				if (c >= 'A' && c <= 'F')
+					{ rv = rv * 16 + c - 'A' + 10; }
+				else
+				if (c >= 'a' && c <= 'f')
+					{ rv = rv * 16 + c - 'a' + 10; }
+				else
+				if (ctype.is (std::ctype_base::space, c))
+					{ is.putback (c); bSuccess = true; break; }
+				else
+					{ is.putback (c); bSuccess = false; break; }
+			}
+			else
+				Azzert (0);
+			
+			Azzert (c);
+		}
+	}
+	
+	if (bSuccess)
+		return bNegative ? - rv : rv;
+	else
+	{
+		is.setstate (std::ios_base::failbit);
+		return lyb::none;
+	}
 }
+
+}
+

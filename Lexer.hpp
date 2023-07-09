@@ -3,6 +3,7 @@
 #include "Token.hpp"
 
 #include "optional.hpp"
+#include "string_view.hpp"
 
 #include <vector>
 #include <locale>
@@ -18,6 +19,12 @@ class InputRange;
 lyb::optional <std::vector <Token>>
 Tokenize
 (InputRange <char> *pInputRange, const std::ctype <char> &ctype = std::use_facet <std::ctype <char>> (std::locale {}));
+
+class Cursor;
+
+lyb::optional <Token>
+ExtractToken
+(std::istream &is, Cursor *pCursor = nullptr);
 
 // [2023-07-07]
 //   `getline_paren (my_istream, my_string, '(', ')')` reads input starting with (possibly whitespace, then) '(' until ')'.
@@ -171,5 +178,13 @@ getline_paren
 lyb::optional <std::vector <Token>>
 Tokenize_paren
 (std::istream &is, char cParenLeft = '(', char cParenRite = ')');
+
+lyb::optional <int64_t>
+to_int64_t
+(InputRange <char> *pInputRange, const std::ctype <char> &ctype = std::use_facet <std::ctype <char>> (std::locale {}));
+
+lyb::optional <int64_t>
+ExtractIntegral
+(std::istream &is);
 
 }

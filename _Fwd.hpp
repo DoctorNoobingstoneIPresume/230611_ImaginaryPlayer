@@ -136,3 +136,18 @@ ScopeGuard <F> MakeScopeGuard (F &&f)
 //   (and this is bad).
 //   Only built-in arrays should be allowed.
 #define nelems(a) ((sizeof (a) / sizeof (0 [a])))
+
+
+// numcmp:
+
+template <typename T>
+int numcmp (T x, T y)
+{
+	if (x == y)
+		return  0;
+	else
+	if (x < y)
+		return -1;
+	else
+		return +1;
+}

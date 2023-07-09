@@ -10,6 +10,8 @@
 namespace ImaginaryPlayer
 {
 
+class Cursor;
+
 class Token
 {
  private:
@@ -29,6 +31,8 @@ class Token
 	
 	unsigned          GetCol   ()                       const;
 	Token            &SetCol   (unsigned value);
+	
+	Token            &SetFrom  (const Cursor &cursor);
 
  public:
 	Token ();
