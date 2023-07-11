@@ -41,6 +41,7 @@ Worker::ThreadFn
 		const auto arg = WorkerImpl::Arg {}.Now (tNow);
 		
 		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait (arg) : Duration {-1}};
+		const bool     dtWait_b {dtWait >= Duration {0}};
 		
 		std::cv_status status;
 		
@@ -50,10 +51,10 @@ Worker::ThreadFn
 			status = loc_pWorker->_cv.wait_until
 			(
 				lock,
-				tNow + (dtWait >= Duration {0} ? dtWait : Duration {1000 * 60})
+				tNow + (dtWait_b ? dtWait : Duration {1000 * 60})
 			);
 			
-			if (status == std::cv_status::timeout && dtWait >= Duration {0})
+			if (status == std::cv_status::timeout && dtWait_b)
 				break;
 		}
 		
@@ -81,7 +82,7 @@ Worker::ThreadFn
 		if (bEndRequested)
 			break;
 		
-		if (status == std::cv_status::timeout && dtWait >= Duration {0})
+		if (status == std::cv_status::timeout && dtWait_b)
 		{
 			Azzert (loc_pWorker->_pImpl);
 			const auto rv {loc_pWorker->_pImpl->OnTimeout (arg)};

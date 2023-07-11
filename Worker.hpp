@@ -28,7 +28,8 @@ class Worker
 		Break_0                       = 0,
 		Break_1                       = Break_Mask,
 		
-		All_Mask                      = (1 << 1) - 1
+		All_Mask                      = (1 << 1) - 1,
+		RV_Normal                     = 0
 	};
 	
 	typedef

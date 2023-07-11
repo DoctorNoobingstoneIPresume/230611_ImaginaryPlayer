@@ -3,7 +3,12 @@
 #include "Player.hpp"
 #include "WorkerImpl_Player.hpp"
 
+#include "Lexer.hpp"
+#include "Cursor.hpp"
+
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <string>
 
 #include <thread>
@@ -30,16 +35,35 @@ int main ()
 		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (spPlayer))};
 		const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
 		
-		Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "Surprise !\n"; return Worker::WorkItemRV (0); }));
+		Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "Surprise !\n"; return Worker::RV_Normal; }));
 		
 		for (;;)
 		{
-			Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "> " << std::flush; return Worker::WorkItemRV (0); }));
+			Logger_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([] () { std::cout << "> " << std::flush; return Worker::RV_Normal; }));
 			std::string sLine;
-			std::getline (std::cin, sLine);
+			{
+				if (! std::cin)
+					{ std::cout << "cin had already failed !\n"; return 1; }
+				
+				if (std::cin.eof ())
+					{ std::cout << "cin has ended.\n"; break; }
+				
+				if (! std::getline (std::cin, sLine))
+					{ std::cout << "getline has failed !\n"; return 1; }
+			}
 			
-			if (sLine == "exit")
+			std::istringstream isLine {sLine};
+			Cursor cursor;
+			const auto Command_opttoken {ExtractToken (isLine, &cursor)};
+			if (! Command_opttoken)
+				{ std::cout << "ExtractToken has failed !\n"; continue; }
+			const auto &Command_token {*Command_opttoken};
+			const std::string Command_sText {Command_token.GetText ()};
+			
+			if (Command_sText == "exit")
 				break;
+			else
+				{ std::cout << "Unrecognized command: \"" << Command_sText << "\" !\n"; continue; }
 		}
 	}
 	
