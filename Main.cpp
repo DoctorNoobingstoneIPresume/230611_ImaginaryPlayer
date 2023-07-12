@@ -40,7 +40,7 @@ int main ()
 		
 		const auto logcontext {LogContext {}.SetThreadName ("Main").SetSPWorker (Logger_spWorker)};
 		
-		const auto spPlayer {std::make_shared <Player> (Logger_spWorker)};
+		const auto spPlayer {std::make_shared <Player> (LogContext {}.SetThreadName ("Play").SetSPWorker (Logger_spWorker))};
 		
 		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (spPlayer))};
 		const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
