@@ -26,7 +26,7 @@ class Player
 	std::ostream &Put (std::ostream &os) const;
 
  public:
-	Player (const LogContext &logcontext);
+	explicit Player (const LogContext &logcontext);
 
  public:
 	Duration GetTimeToWait (const WorkerImpl::Arg &arg);

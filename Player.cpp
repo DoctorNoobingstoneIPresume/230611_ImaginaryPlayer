@@ -50,46 +50,56 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 	
 	Duration rv {-1};
 	{
-		const Song *pSong {_contSongs.empty () ? nullptr : &_contSongs.front ()};
-		if (_bPlaying && pSong)
+		if (_bPlaying)
 		{
-			auto dtSongLength {pSong ? pSong->GetLength () : Duration {0}};
-			Azzert (_dtWithinSong <= dtSongLength);
-			
 			const auto tNow {arg.Now ()};
+			Azzert (tNow >= _tLastPlaying);
 			
-			Duration dtElapsed {tNow - _tLastPlaying};
+			while (! _contSongs.empty () && _tLastPlaying < tNow)
 			{
-				if (_dtWithinSong + dtElapsed > dtSongLength)
-					dtElapsed = dtSongLength - _dtWithinSong;
+				const Song &song {_contSongs.front ()};
+				const auto dtSong {song.GetLength ()}; Azzert (_dtWithinSong <= dtSong);
+				const auto dtSongRemaining {dtSong - _dtWithinSong};
+				
+				const auto dtElapsed {tNow - _tLastPlaying};
+				
+				const auto dtConsidered {std::min (dtElapsed, dtSongRemaining)};
+				
+				const int cc_dt {7}; // [2023-07-13] `cc_dt`: "count of characters for delta-time".
+				osMsg
+					<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed      .count () << ", "
+					<< "dtSongRemaining " << std::setw (cc_dt) << dtSongRemaining.count () << ", "
+					<< "dtConsidered "    << std::setw (cc_dt) << dtConsidered   .count () << ".\n";
+				
+				_dtWithinSong += dtConsidered; Azzert (_dtWithinSong <= dtSong);
+				_tLastPlaying += dtConsidered;
+				bool bSongHasChanged {false};
+				{
+					if (_dtWithinSong >= dtSong)
+					{
+						_contSongs.pop_front ();
+						_dtWithinSong = Duration {0};
+						bSongHasChanged = true;
+					}
+				}
+				
+				osMsg << "Updated: " << *this << "\n";
+				
+				// [2023-07-13] Protection against _tLastPlaying not advancing:
+				if (dtConsidered <= Duration {0} && ! bSongHasChanged)
+					break;
 			}
 			
-			_dtWithinSong += dtElapsed;
-			Azzert (_dtWithinSong <= dtSongLength);
-			if (_dtWithinSong >= dtSongLength)
+			if (! _contSongs.empty ())
 			{
-				_contSongs.pop_front ();
+				const Song &song {_contSongs.front ()};
+				const auto dtSong {song.GetLength ()}; Azzert (_dtWithinSong <= dtSong);
+				rv = dtSong - _dtWithinSong;
 				
-				// [2023-07-12] TODO: We have to update all "cached" values !
-				pSong = _contSongs.empty () ? nullptr : &_contSongs.front ();
-				dtSongLength = pSong ? pSong->GetLength () : Duration {0};
-				
-				_dtWithinSong = Duration {0};
-				
+				// [2023-07-13] For debugging:
+				//rv = std::max (rv, Duration {4000});
+				rv = std::min (rv, Duration {1000});
 			}
-			
-			_tLastPlaying = tNow;
-			
-			if (pSong)
-			{
-				// [2023-07-12] Have we updated the "cached" value ?
-				Azzert (dtSongLength == pSong->GetLength ());
-				
-				rv = dtSongLength - _dtWithinSong;
-				rv = std::min (Duration {1000}, rv);
-			}
-			
-			osMsg << "Updated: " << *this << "\n";
 		}
 	}
 	
