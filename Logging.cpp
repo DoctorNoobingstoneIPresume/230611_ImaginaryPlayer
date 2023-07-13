@@ -9,6 +9,9 @@
 namespace ImaginaryPlayer
 {
 
+TimePoint   LogContext::StartOfTime ()                const { return _t0; }
+LogContext &LogContext::StartOfTime (TimePoint value)       { _t0 = value; return *this; }
+
 std::string       LogContext::GetThreadName  ()                       const { return _sThreadName; }
 lyb::string_view  LogContext::GetThreadNameQ ()                       const { return _sThreadName; }
 LogContext       &LogContext::SetThreadName  (lyb::string_view value)       { _sThreadName = lyb::ViewToString (value); return *this; }
@@ -16,8 +19,9 @@ LogContext       &LogContext::SetThreadName  (lyb::string_view value)       { _s
 std::shared_ptr <Worker>  LogContext::GetSPWorker ()                                      const { return _spWorker; }
 LogContext               &LogContext::SetSPWorker (const std::shared_ptr <Worker> &value)       { _spWorker = value; return *this; }
 
-LogContext::LogContext ()
-= default;
+LogContext::LogContext (TimePoint t0):
+	_t0 {t0}
+{}
 
 void
 ComposeAndLog
@@ -28,6 +32,8 @@ ComposeAndLog
 		const std::string sThreadName {logcontext.GetThreadName ()};
 		if (! sThreadName.empty ())
 		{
+			const auto tNow = Now ();
+			os << "[" << std::setw (6) << (tNow - logcontext.StartOfTime ()).count () << "] ";
 			os << "[" << sThreadName << "] ";
 			if (! os)
 				throw std::runtime_error {"`ComposeAndLog`: Writing the header has failed !"};

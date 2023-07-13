@@ -13,10 +13,14 @@ namespace ImaginaryPlayer
 class LogContext
 {
  private:
+	      TimePoint                         _t0;
 	      std::string                       _sThreadName;
 	      std::shared_ptr <Worker>          _spWorker;
 
  public:
+	TimePoint   StartOfTime ()                const;
+	LogContext &StartOfTime (TimePoint value);
+	
 	std::string       GetThreadName  ()                       const;
 	lyb::string_view  GetThreadNameQ ()                       const;
 	LogContext       &SetThreadName  (lyb::string_view value);
@@ -25,7 +29,7 @@ class LogContext
 	LogContext               &SetSPWorker (const std::shared_ptr <Worker> &value);
 
  public:
-	LogContext ();
+	explicit LogContext (TimePoint t0 = Now ());
 };
 
 void

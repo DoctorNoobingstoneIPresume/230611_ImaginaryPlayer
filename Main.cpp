@@ -38,10 +38,11 @@ int main ()
 		// [2023-06-17] TODO: In the following line, if we replace the inner braces with parentheses, the thread is not run ! Why ?
 		const auto Logger_jthread {ScopedWorkerThread {Logger_spWorker}};
 		
-		const auto logcontext {LogContext {}.SetThreadName ("Main").SetSPWorker (Logger_spWorker)};
+		const auto t0 {Now ()};
+		const auto logcontext     {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Main")};
+		const auto logcontextPlay {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Play")};
 		
-		const auto spPlayer {std::make_shared <Player> (LogContext {}.SetThreadName ("Play").SetSPWorker (Logger_spWorker))};
-		
+		const auto spPlayer {std::make_shared <Player> (logcontextPlay)};
 		const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (spPlayer))};
 		const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
 		
