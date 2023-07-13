@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <algorithm>
+
 namespace ImaginaryPlayer
 {
 
@@ -12,8 +14,8 @@ Player::Player (const LogContext &logcontext):
 	_logcontext     {logcontext},
 	_contSongs
 	{
-		Song {}.SetSongName ("Demo Song of 10 seconds").SetLength (std::chrono::seconds {10}),
-		Song {}.SetSongName ("Demo Song of 15 seconds").SetLength (std::chrono::seconds {15})
+		Song {}.SetSongName ("Demo Song of 3 seconds").SetLength (std::chrono::seconds {3}),
+		Song {}.SetSongName ("Demo Song of 6 seconds").SetLength (std::chrono::seconds {6})
 	},
 	_dtWithinSong   {0},
 	_bPlaying       {true},
@@ -24,12 +26,13 @@ std::ostream &Player::Put (std::ostream &os) const
 {
 	std::ostringstream osTmp;
 	{
-		osTmp << "_bPlaying " << _bPlaying << ", songs " << _contSongs.size () << ", _dtWithinSong " << _dtWithinSong.count ();
+		osTmp << "_bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
 		if (! _contSongs.empty ())
 		{
 			const Song &song {_contSongs.front ()};
 			osTmp << ", first " << song;
 		}
+		osTmp << ", _dtWithinSong " << _dtWithinSong.count ();
 	}
 	
 	return os << osTmp.str ();
@@ -37,22 +40,56 @@ std::ostream &Player::Put (std::ostream &os) const
 
 Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 {
+	// [2023-07-12] In the lambda given to `ComposeAndLog`, `__func__` is `"operator()"`. But what we want is `"GetTimeToWait"`. So we prepare that in `psz_func`.
 	const char *const psz_func {__func__};
 	
 	std::ostringstream osMsg;
 	{
-		osMsg << *this;
+		osMsg << "Initial: " << *this << "\n";
 	}
 	
 	Duration rv {-1};
 	{
-		if (_bPlaying && ! _contSongs.empty ())
+		const Song *pSong {_contSongs.empty () ? nullptr : &_contSongs.front ()};
+		if (_bPlaying && pSong)
 		{
-			const Song &song {_contSongs.front ()};
-			const Duration dtSongLength {song.GetLength ()};
+			auto dtSongLength {pSong ? pSong->GetLength () : Duration {0}};
 			Azzert (_dtWithinSong <= dtSongLength);
-			_tLastPlaying = arg.Now ();
-			rv = dtSongLength - _dtWithinSong;
+			
+			const auto tNow {arg.Now ()};
+			
+			Duration dtElapsed {tNow - _tLastPlaying};
+			{
+				if (_dtWithinSong + dtElapsed > dtSongLength)
+					dtElapsed = dtSongLength - _dtWithinSong;
+			}
+			
+			_dtWithinSong += dtElapsed;
+			Azzert (_dtWithinSong <= dtSongLength);
+			if (_dtWithinSong >= dtSongLength)
+			{
+				_contSongs.pop_front ();
+				
+				// [2023-07-12] TODO: We have to update all "cached" values !
+				pSong = _contSongs.empty () ? nullptr : &_contSongs.front ();
+				dtSongLength = pSong ? pSong->GetLength () : Duration {0};
+				
+				_dtWithinSong = Duration {0};
+				
+			}
+			
+			_tLastPlaying = tNow;
+			
+			if (pSong)
+			{
+				// [2023-07-12] Have we updated the "cached" value ?
+				Azzert (dtSongLength == pSong->GetLength ());
+				
+				rv = dtSongLength - _dtWithinSong;
+				rv = std::min (Duration {1000}, rv);
+			}
+			
+			osMsg << "Updated: " << *this << "\n";
 		}
 	}
 	
@@ -61,7 +98,7 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			os << psz_func << ": " << osMsg.str () << ", rv " << rv.count () << ".\n";
+			os << psz_func << ":\n" << osMsg.str () << "=> rv " << rv.count () << ".\n";
 		}
 	);
 	
@@ -72,14 +109,8 @@ Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 {
 	const char *const psz_func {__func__};
 	
-	if (_bPlaying)
-	{
-		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ": Timeout.\n"; });
-		if (! _contSongs.empty ())
-			_contSongs.pop_front ();
-	}
-	
-	return Worker::Break_0;
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ": Timeout.\n"; });
+	return Worker::RV_Normal;
 }
 
 std::ostream &operator<< (std::ostream &os, const Player &object)
