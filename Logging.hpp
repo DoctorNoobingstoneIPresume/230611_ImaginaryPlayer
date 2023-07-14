@@ -40,4 +40,12 @@ void
 ComposeAndLog
 (                              const std::function <void (std::ostream &os)> &fnPrepareMessage);
 
+std::string
+Indent
+(lyb::string_view sInput,                          unsigned nTabs = 1, lyb::string_view sTab = "\t");
+
+std::string
+IndentWithTitle
+(lyb::string_view sInput, lyb::string_view sTitle, unsigned nTabs = 1, lyb::string_view sTab = "\t");
+
 }

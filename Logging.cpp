@@ -1,6 +1,7 @@
 #include "Logging.hpp"
 #include "Worker.hpp"
 
+#include <locale>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -66,6 +67,80 @@ ComposeAndLog
 (                              const std::function <void (std::ostream &os)> &fnPrepareMessage)
 {
 	return ComposeAndLog (LogContext {}, fnPrepareMessage);
+}
+
+std::string
+Indent
+(lyb::string_view sInput,                          unsigned nTabs, lyb::string_view sTab)
+{
+	const std::ctype <char> &ctype {std::use_facet <std::ctype <char>> (std::locale {})};
+	
+	std::string rv;
+	std::string sEmptyLines;
+	bool        bEmptyLines {true};
+	{
+		std::string sTabs;
+		{
+			sTabs.reserve (nTabs * sTab.size ());
+			for (unsigned iTab = 0; iTab < nTabs; ++iTab)
+				#if IMAGINARYPLAYER_STRING_VIEW_BOOST
+					sTabs.append (sTab.data (), sTab.size ());
+				#else
+					sTabs += sTab;
+				#endif
+		}
+		
+		// [2023-07-14] Yes, in the following line we have `<=`, not `<`.
+		for (std::size_t icInput = 0, ccInput = sInput.size (); icInput <= ccInput; ++icInput)
+		{
+			const char c {icInput < ccInput ? sInput [icInput] : '\n'};
+			if (bEmptyLines)
+			{
+				if (ctype.is (std::ctype_base::space, c))
+					sEmptyLines += c;
+				else
+				{
+					rv += sEmptyLines;
+					sEmptyLines.clear ();
+					bEmptyLines = false;
+					
+					rv += sTabs;
+					rv += c;
+				}
+			}
+			else
+			{
+				rv.push_back (c);
+				
+				if (c == '\n')
+					bEmptyLines = true;
+			}
+		}
+	}
+	
+	return rv;
+}
+
+std::string
+IndentWithTitle
+(lyb::string_view sInput, lyb::string_view sTitle, unsigned nTabs, lyb::string_view sTab)
+{
+	std::string rv;
+	{
+		const auto sIndented {Indent (sInput, nTabs, sTab)};
+		
+		rv.reserve (sTitle.size () + 3 + sIndented.size () + 2);
+		
+		#if IMAGINARYPLAYER_STRING_VIEW_BOOST
+			rv.append (sTitle.data (), sTitle.size ());
+		#else
+			rv += sTitle;
+		#endif
+		
+		rv += "\n{\n";
+		rv += sIndented;
+		rv += "}\n";
+	}
 }
 
 }
