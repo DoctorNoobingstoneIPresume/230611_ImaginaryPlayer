@@ -18,7 +18,7 @@ namespace lyb
  using boost::none;
 #else
  using std::optional;
- using std::none;
+ constexpr const std::nullopt_t &none = std::nullopt;
 #endif
 
 }
