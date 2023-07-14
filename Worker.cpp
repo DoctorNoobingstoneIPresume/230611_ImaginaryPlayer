@@ -55,7 +55,10 @@ Worker::ThreadFn
 			if (iRetry >= 10 && loc_pWorker->_pImpl) std::cout << "dtFor " << std::setw (7) << dtFor.count () << "...\n" << std::flush;
 			
 			status = loc_pWorker->_cv.wait_until (lock, tNow + dtFor);
-			if (status == std::cv_status::timeout && dtWait_b)
+			
+			// [2023-07-14] BUGFIX: Without this fix, we used to enter "busy waiting" (the "excessive use of CPU" mentioned above) after the timeout:
+			//if (status == std::cv_status::timeout && dtWait_b)
+			if (status == std::cv_status::timeout)
 				break;
 		}
 		
