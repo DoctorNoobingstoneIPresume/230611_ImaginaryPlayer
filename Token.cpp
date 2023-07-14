@@ -20,7 +20,7 @@ Token            &Token::SetRow   (unsigned value)               { _iRow = value
 unsigned          Token::GetCol   ()                       const { return _iCol; }
 Token            &Token::SetCol   (unsigned value)               { _iCol = value; return *this; }
 
-Token &Token::SetFrom (const Cursor &cursor) { SetRow (cursor.GetRow ()); SetCol (cursor.GetCol ()); }
+Token &Token::SetFrom (const Cursor &cursor) { SetRow (cursor.GetRow ()); SetCol (cursor.GetCol ()); return *this; }
 
 Token::Token ():
 	_iRow {0},

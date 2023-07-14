@@ -37,7 +37,7 @@ class InputRange_Stream:
 	}
 
  private:
-	bool GetOneCharIntoTheBuffer ()
+	void GetOneCharIntoTheBuffer ()
 	{
 		Azzert (! _pStream->fail ());
 		Azzert (! _pStream->eof  ());
