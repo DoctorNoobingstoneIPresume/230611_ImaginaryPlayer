@@ -294,6 +294,7 @@ ExtractIntegral
 				else
 				if (c == '+')
 					;
+				else
 				if (c == '0')
 					iState = 9;
 				else
