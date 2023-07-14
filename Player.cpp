@@ -6,6 +6,7 @@
 #include <iomanip>
 
 #include <algorithm>
+#include <tuple>
 
 namespace ImaginaryPlayer
 {
@@ -40,7 +41,7 @@ std::ostream &Player::Put (std::ostream &os) const
 	return os << osTmp.str ();
 }
 
-Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
+std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 {
 	// [2023-07-12] In the lambda given to `ComposeAndLog`, `__func__` is `"operator()"`. But what we want is `"GetTimeToWait"`. So we prepare that in `psz_func`.
 	const char *const psz_func {__func__};
@@ -108,17 +109,36 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 		}
 	}
 	
+	return std::make_pair (rv, osMsg.str ());
+}
+
+Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
+{
+	// [2023-07-12] In the lambda given to `ComposeAndLog`, `__func__` is `"operator()"`. But what we want is `"GetTimeToWait"`. So we prepare that in `psz_func`.
+	const char *const psz_func {__func__};
+	
+	#if defined __cpp_structured_bindings
+		const auto [rv, sMsg] = OnElapsedTime (arg);
+	#else
+		Duration rv;
+		std::string sMsg;
+		{
+			std::tie (rv, sMsg) = OnElapsedTime (arg);
+		}
+	#endif
+	
 	ComposeAndLog
 	(
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			os << psz_func << ":\n" << osMsg.str () << "=> rv " << rv.count () << ".\n\n";
+			os << psz_func << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
 		}
 	);
 	
 	return rv;
 }
+
 
 Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 {
@@ -178,6 +198,30 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	
 	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ":\n" << osMsg.str (); });
 	
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
+{
+	const char *const psz_func {__func__};
+	
+	#if defined __cpp_structured_bindings
+		const auto [rv, sMsg] = OnElapsedTime (arg);
+	#else
+		Duration rv; std::string sMsg; { std::tie (rv, sMsg) = OnElapsedTime (arg); }
+	#endif
+	
+	ComposeAndLog
+	(
+		_logcontext,
+		[&] (std::ostream &os)
+		{
+			os << psz_func << ": Playing status " << _bPlaying << " => " << bPlaying << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
+		}
+	);
+	
+	if (bPlaying) _tLastPlaying = arg.ThenCrtTime ();
+	if (1)        _bPlaying = bPlaying;
 	return Worker::RV_Normal;
 }
 

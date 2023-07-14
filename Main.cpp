@@ -94,6 +94,14 @@ int main ()
 				);
 			}
 			
+			std::string Command_sRestOfLine;
+			{
+				// [2023-07-14] TODO: Consider: We do allow the following call to fail, right ?
+				std::getline (Command_isLine, Command_sRestOfLine);
+			}
+			
+			std::istringstream Command_isRestOfLine {Command_sRestOfLine};
+			
 			const auto tNow {Now ()};
 			const auto arg {WorkerImpl::Arg {}};
 			ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "arg " << arg << ".\n"; });
@@ -120,8 +128,12 @@ int main ()
 							"    AddSong (<song-description>)\n"
 							"        Adds the specified song to the queue.\n"
 							"\n"
-							"    \n"
-							"        \n"
+							"    (Play|Pause)\n"
+							"        Toggles the \"playing\" state.\n"
+							"\n"
+							"    Sleep <number_of_milliseconds>\n"
+							"        Puts the main thread to sleep => commands are not going to be processed for the specified duration.\n"
+							"        (This command is useful for functional tests.)\n"
 							"\n"
 							"Example of <song-description>:\n"
 							"    " << songExample << "\n"
@@ -151,7 +163,7 @@ int main ()
 			{
 				Song song;
 				{
-					if (! (Command_isLine >> song))
+					if (! (Command_isRestOfLine >> song))
 					{
 						ComposeAndLog
 						(
@@ -159,7 +171,7 @@ int main ()
 							[&] (std::ostream &os)
 							{
 								os
-									<< "We have not been able to process the `Song` description !\n"
+									<< "We have not been able to process the `Song` description from \"" << Command_sRestOfLine << "\" !\n"
 									<< "Example of an expected `Song` description:\n"
 									<< "    " << songExample << "\n";
 							}
@@ -178,6 +190,39 @@ int main ()
 						[=] () { return spPlayer->AddSong (arg, song); }
 					)
 				);
+			}
+			else
+			if (Command_sTextLo == "pause")
+			{
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->Play (arg, false); }
+					)
+				);
+			}
+			else
+			if (Command_sTextLo == "play")
+			{
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->Play (arg, true); }
+					)
+				);
+			}
+			else
+			if (Command_sTextLo == "sleep")
+			{
+				if (const auto opti = ExtractIntegral (Command_isRestOfLine))
+				{
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Sleep: Sleeping for " << std::setw (7) << *opti << " millisecond(s)...\n"; });
+					std::this_thread::sleep_until (tNow + std::chrono::milliseconds {*opti});
+				}
+				else
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Sleep: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
 				{ ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Unrecognized command: \"" << Command_sText << "\" !\n"; }); continue; }

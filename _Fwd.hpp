@@ -151,3 +151,8 @@ int numcmp (T x, T y)
 	else
 		return +1;
 }
+
+
+// cc_dt:
+
+const int cc_dt {7};
