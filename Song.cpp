@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <locale>
 
+#include <cstring>
+
 namespace ImaginaryPlayer
 {
 
