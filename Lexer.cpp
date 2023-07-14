@@ -266,6 +266,21 @@ ExtractIntegral
 			const auto c_int {is.get ()};
 			const char c     {static_cast <char> (c_int == std::char_traits <char>::eof () ? 0 : c_int)};
 			
+			#if IMAGINARYPLAYER_Lexer_iDebug
+			{
+				std::ostringstream os;
+				{
+					os
+						<< "iState " << std::setw (2) << iState << ", "
+						<< std::hex << std::uppercase << std::setfill ('0')
+						<< "c " << std::setw (2) << c_int << "h \'" << c << "\', "
+						<< "is.rdstate () " << std::setw (2) << is.rdstate () << "h.\n";
+				}
+				
+				std::cout << os.str ();
+			}
+			#endif
+			
 			if (! iState)
 			{
 				if (! c)
@@ -340,6 +355,20 @@ ExtractIntegral
 			
 			Azzert (c);
 		}
+		
+		#if IMAGINARYPLAYER_Lexer_iDebug
+		{
+			std::ostringstream os;
+			{
+				os
+					<< "Final is.rdstate () "
+					<< std::hex << std::uppercase << std::setfill ('0')
+					<< is.rdstate () << ".\n";
+			}
+			
+			std::cout << os.str ();
+		}
+		#endif
 	}
 	
 	if (bSuccess)
