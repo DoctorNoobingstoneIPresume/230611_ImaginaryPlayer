@@ -31,16 +31,17 @@ class Player
 	explicit Player (const LogContext &logcontext);
 
  private:
-	std::pair <Duration, std::string> OnElapsedTime (const WorkerImpl::Arg &arg);
+	std::pair <Duration, std::string> OnElapsedTime   (const WorkerImpl::Arg &arg);
 
  public:
-	Duration GetTimeToWait (const WorkerImpl::Arg &arg);
-	Worker::WorkItemRV OnTimeout (const WorkerImpl::Arg &arg);
+	Duration                          GetTimeToWait   (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV                OnTimeout       (const WorkerImpl::Arg &arg);
 
  public:
-	Worker::WorkItemRV Show    (const WorkerImpl::Arg &arg);
-	Worker::WorkItemRV AddSong (const WorkerImpl::Arg &arg, const Song &song);
-	Worker::WorkItemRV Play    (const WorkerImpl::Arg &arg, bool bPlaying);
+	Worker::WorkItemRV                Show            (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV                AddSong         (const WorkerImpl::Arg &arg, const Song &song);
+	Worker::WorkItemRV                Play            (const WorkerImpl::Arg &arg, bool bPlaying);
+	Worker::WorkItemRV                PrevNext        (const WorkerImpl::Arg &arg, bool bNext);
 };
 
 std::ostream &operator<< (std::ostream &os, const Player &object);
