@@ -5,8 +5,9 @@
 
 #include <utility>
 #include <chrono>
-#include <cstdint>
 
+#include <cstdint>
+#include <cstdlib>
 
 namespace ImaginaryPlayer
 {
@@ -18,7 +19,7 @@ using std:: int8_t; using std:: int16_t; using std:: int32_t; using std:: int64_
 
 // Representationf and type of time units:
 
-typedef int TimeRep;
+typedef std::ptrdiff_t TimeRep;
 typedef std::ratio <1, 1000> TimePeriod;
 typedef std::chrono::duration <TimeRep, TimePeriod> Duration;
 typedef std::chrono::time_point <std::chrono::steady_clock, Duration> TimePoint;
