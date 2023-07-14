@@ -55,7 +55,7 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 	{
 		if (_bPlaying)
 		{
-			const auto tNow {arg.Now ()};
+			const auto tNow {arg.ThenCrtTime ()};
 			Azzert (tNow >= _tLastPlaying);
 			
 			while (! _contSongs.empty () && _tLastPlaying < tNow)
@@ -140,7 +140,7 @@ Worker::WorkItemRV Player::Show (const WorkerImpl::Arg &arg)
 	
 	if (_bPlaying)
 	{
-		const auto tNow      {arg.Now ()};
+		const auto tNow      {arg.ThenCrtTime ()};
 		const auto dtElapsed {tNow - _tLastPlaying};
 		
 		const int cc_dt {7};
@@ -165,12 +165,12 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	if (_bPlaying && _contSongs.empty ())
 	{
 		osMsg << "Updating _tLastPlaying...\n";
-		_tLastPlaying = arg.Now ();
+		_tLastPlaying = arg.ThenCrtTime ();
 	}
 	
-	const auto dtElapsed {arg.Now () - _tLastPlaying};
+	const auto dtElapsed {arg.ThenCrtTime () - _tLastPlaying};
 	
-	const int cc_dt {7}; // [2023-07-13] `cc_dt`: "count of characters for delta-time".
+	const int cc_dt {7};
 	osMsg
 		<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed      .count () << ".\n";
 	

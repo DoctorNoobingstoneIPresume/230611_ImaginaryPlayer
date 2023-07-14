@@ -95,7 +95,7 @@ int main ()
 			}
 			
 			const auto tNow {Now ()};
-			const auto arg = WorkerImpl::Arg {}.Now (Now ()); //.Now (tNow);
+			const auto arg {WorkerImpl::Arg {}};
 			ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "arg " << arg << ".\n"; });
 			if (Command_sTextLo == "help" || Command_sTextLo == "?")
 			{

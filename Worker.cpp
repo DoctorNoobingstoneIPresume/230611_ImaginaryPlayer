@@ -38,7 +38,7 @@ Worker::ThreadFn
 		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
 		const auto tNow = Now ();
 		
-		const auto arg = WorkerImpl::Arg {}.Now (tNow);
+		const auto arg = WorkerImpl::Arg {};
 		
 		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait (arg) : Duration {-1}};
 		const bool     dtWait_b {dtWait >= Duration {0}};

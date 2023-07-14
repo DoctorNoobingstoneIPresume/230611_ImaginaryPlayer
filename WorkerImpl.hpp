@@ -31,8 +31,8 @@ class WorkerImpl:
 		      TimePoint                 _tNow;
 	
 	 public:
-		TimePoint  Now ()                const;
-		ThisType  &Now (TimePoint value);
+		TimePoint  ThenCrtTime ()                const;
+		ThisType  &ThenCrtTime (TimePoint value);
 	
 	 public:
 		Arg ();
