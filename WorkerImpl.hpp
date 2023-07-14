@@ -2,7 +2,10 @@
 
 #include "Worker.hpp"        // [2023-06-20] For `Worker::WorkItemRV`.
 #include "_Fwd.hpp"
+
 #include "noncopyable.hpp"
+
+#include <iosfwd>
 
 namespace ImaginaryPlayer
 {
@@ -33,6 +36,9 @@ class WorkerImpl:
 	
 	 public:
 		Arg ();
+	
+	 public:
+		std::ostream &Put (std::ostream &os) const;
 	};
 
  public:
@@ -46,5 +52,7 @@ class WorkerImpl:
 	Duration GetTimeToWait (const Arg &arg);
 	Worker::WorkItemRV OnTimeout (const Arg &arg);
 };
+
+std::ostream &operator<< (std::ostream &os, const WorkerImpl::Arg &object);
 
 }

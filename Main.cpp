@@ -16,7 +16,6 @@
 
 #include <string>
 
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -50,6 +49,10 @@ int main ()
 		
 		const auto songExample = Song {}.SetArtistName ("Madonna").SetSongName ("Frozen").SetCodecName ("MP3").SetLength (std::chrono::minutes {5} + std::chrono::seconds {29});
 		
+		{
+			std::this_thread::sleep_until (t0 + Duration {100});
+		}
+		
 		for (;;)
 		{
 			ComposeAndLog (logcontext, [] (std::ostream &os) { os << "> "; });
@@ -82,6 +85,7 @@ int main ()
 			const std::string Command_sText {Command_token.GetText ()};
 			      std::string Command_sTextLo {Command_sText};
 			{
+				// [2023-07-14] TODO: Transform from UTF-8 to UTF-16 or UTF-32, then switch to lowercase, then transform back.
 				std::transform
 				(
 					Command_sTextLo.begin (), Command_sTextLo.end (),
@@ -90,6 +94,9 @@ int main ()
 				);
 			}
 			
+			const auto tNow {Now ()};
+			const auto arg = WorkerImpl::Arg {}.Now (Now ()); //.Now (tNow);
+			ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "arg " << arg << ".\n"; });
 			if (Command_sTextLo == "help" || Command_sTextLo == "?")
 			{
 				std::ostringstream osHelp;
@@ -106,6 +113,9 @@ int main ()
 							"    Exit\n"
 							"        Enqueues \"exit\" command to worker threads, then exits the main loop too.\n"
 							"        That is a nerdy way of saying that we exit the ImaginaryPlayer.\n"
+							"\n"
+							"    (Show|ShowPlayer)\n"
+							"        Displays debugging information about the Player.\n"
 							"\n"
 							"    AddSong (<song-description>)\n"
 							"        Adds the specified song to the queue.\n"
@@ -125,6 +135,17 @@ int main ()
 			else
 			if (Command_sTextLo == "exit")
 				break;
+			else
+			if (Command_sTextLo == "showplayer" || Command_sTextLo == "show")
+			{
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->Show (arg); }
+					)
+				);
+			}
 			else
 			if (Command_sTextLo == "addsong")
 			{
@@ -149,6 +170,14 @@ int main ()
 				}
 				
 				ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "We are adding " << song << "...\n"; });
+				
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->AddSong (arg, song); }
+					)
+				);
 			}
 			else
 				{ ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Unrecognized command: \"" << Command_sText << "\" !\n"; }); continue; }

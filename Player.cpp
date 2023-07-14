@@ -19,7 +19,8 @@ Player::Player (const LogContext &logcontext):
 	},
 	_dtWithinSong   {0},
 	_bPlaying       {true},
-	_tLastPlaying   {Now ()}
+	_tLastPlaying   {Now ()},
+	_dtPing         {0}
 {}
 
 std::ostream &Player::Put (std::ostream &os) const
@@ -33,6 +34,7 @@ std::ostream &Player::Put (std::ostream &os) const
 			osTmp << ", first " << song;
 		}
 		osTmp << ", _dtWithinSong " << _dtWithinSong.count ();
+		osTmp << ", _tLastPlaying " << _tLastPlaying.time_since_epoch ().count ();
 	}
 	
 	return os << osTmp.str ();
@@ -45,7 +47,8 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 	
 	std::ostringstream osMsg;
 	{
-		osMsg << "Initial: " << *this << "\n";
+		osMsg << "arg:     " << arg << ".\n";
+		osMsg << "Initial: " << *this << ".\n";
 	}
 	
 	Duration rv {-1};
@@ -67,9 +70,10 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 				
 				const int cc_dt {7}; // [2023-07-13] `cc_dt`: "count of characters for delta-time".
 				osMsg
-					<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed      .count () << ", "
-					<< "dtSongRemaining " << std::setw (cc_dt) << dtSongRemaining.count () << ", "
-					<< "dtConsidered "    << std::setw (cc_dt) << dtConsidered   .count () << ".\n";
+					<< "tNow      "       << std::setw (cc_dt) << tNow.time_since_epoch ().count () << ", "
+					<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed               .count () << ", "
+					<< "dtSongRemaining " << std::setw (cc_dt) << dtSongRemaining         .count () << ", "
+					<< "dtConsidered "    << std::setw (cc_dt) << dtConsidered            .count () << ".\n";
 				
 				_dtWithinSong += dtConsidered; Azzert (_dtWithinSong <= dtSong);
 				_tLastPlaying += dtConsidered;
@@ -83,7 +87,7 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 					}
 				}
 				
-				osMsg << "Updated: " << *this << "\n";
+				osMsg << "Updated: " << *this << ".\n";
 				
 				// [2023-07-13] Protection against _tLastPlaying not advancing:
 				if (dtConsidered <= Duration {0} && ! bSongHasChanged)
@@ -98,7 +102,8 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 				
 				// [2023-07-13] For debugging:
 				//rv = std::max (rv, Duration {4000});
-				rv = std::min (rv, Duration {1000});
+				if (_dtPing > Duration {0})
+					rv = std::min (rv, _dtPing);
 			}
 		}
 	}
@@ -108,7 +113,7 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			os << psz_func << ":\n" << osMsg.str () << "=> rv " << rv.count () << ".\n";
+			os << psz_func << ":\n" << osMsg.str () << "=> rv " << rv.count () << ".\n\n";
 		}
 	);
 	
@@ -120,6 +125,59 @@ Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 	const char *const psz_func {__func__};
 	
 	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ": Timeout.\n"; });
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::Show (const WorkerImpl::Arg &arg)
+{
+	const char *const psz_func {__func__};
+	
+	std::ostringstream osMsg;
+	{
+		osMsg << "arg:     " << arg << ".\n";
+		osMsg << "Showing: " << *this << ".\n";
+	}
+	
+	if (_bPlaying)
+	{
+		const auto tNow      {arg.Now ()};
+		const auto dtElapsed {tNow - _tLastPlaying};
+		
+		const int cc_dt {7};
+		osMsg
+			<< "tNow      "       << std::setw (cc_dt) << tNow.time_since_epoch ().count () << ", "
+			<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed               .count () << ".\n";
+	}
+				
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ":\n" << osMsg.str (); });
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song)
+{
+	const char *const psz_func {__func__};
+	
+	std::ostringstream osMsg;
+	{
+		osMsg << "Initial: " << *this << ".\n";
+	}
+	
+	if (_bPlaying && _contSongs.empty ())
+	{
+		osMsg << "Updating _tLastPlaying...\n";
+		_tLastPlaying = arg.Now ();
+	}
+	
+	const auto dtElapsed {arg.Now () - _tLastPlaying};
+	
+	const int cc_dt {7}; // [2023-07-13] `cc_dt`: "count of characters for delta-time".
+	osMsg
+		<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed      .count () << ".\n";
+	
+	_contSongs.push_back (song);
+	
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ":\n" << osMsg.str (); });
+	
 	return Worker::RV_Normal;
 }
 

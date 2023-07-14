@@ -48,12 +48,8 @@ Worker::ThreadFn
 		std::unique_lock <std::mutex> lock (loc_pWorker->_mtx);
 		while (loc_pWorker->_contspWorkItems.empty ())
 		{
-			status = loc_pWorker->_cv.wait_until
-			(
-				lock,
-				tNow + (dtWait_b ? dtWait : Duration {1000 * 60})
-			);
-			
+			const auto tUntil {tNow + (dtWait_b ? dtWait : Duration {60 * 1000})};
+			status = loc_pWorker->_cv.wait_until (lock, tUntil);
 			if (status == std::cv_status::timeout && dtWait_b)
 				break;
 		}

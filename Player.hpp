@@ -21,6 +21,7 @@ class Player
 	      Duration                          _dtWithinSong;
 	      bool                              _bPlaying;
 	      TimePoint                         _tLastPlaying;
+	      Duration                          _dtPing;
 
  public:
 	std::ostream &Put (std::ostream &os) const;
@@ -31,6 +32,10 @@ class Player
  public:
 	Duration GetTimeToWait (const WorkerImpl::Arg &arg);
 	Worker::WorkItemRV OnTimeout (const WorkerImpl::Arg &arg);
+
+ public:
+	Worker::WorkItemRV Show    (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV AddSong (const WorkerImpl::Arg &arg, const Song &song);
 };
 
 std::ostream &operator<< (std::ostream &os, const Player &object);

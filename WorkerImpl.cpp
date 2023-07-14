@@ -1,5 +1,9 @@
 #include "WorkerImpl.hpp"
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 namespace ImaginaryPlayer
 {
 
@@ -9,6 +13,24 @@ WorkerImpl::Arg &WorkerImpl::Arg::Now (TimePoint value)       { _tNow = value; r
 WorkerImpl::Arg::Arg ():
 	_tNow {Now ()}
 {}
+
+std::ostream &WorkerImpl::Arg::Put (std::ostream &os) const
+{
+	std::ostringstream osTmp;
+	{
+		osTmp
+			<< "("
+			<< "_tNow " << _tNow.time_since_epoch ().count ()
+			<< ")";
+	}
+	
+	return os << osTmp.str ();
+}
+
+std::ostream &operator<< (std::ostream &os, const WorkerImpl::Arg &object)
+{
+	return object.Put (os);
+}
 
 WorkerImpl::~WorkerImpl ()
 = default;
