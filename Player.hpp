@@ -35,6 +35,7 @@ class Player
 
  public:
 	Duration                          GetTimeToWait   (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV                OnWakeUp        (const WorkerImpl::Arg &arg, bool bWorkToDo);
 	Worker::WorkItemRV                OnTimeout       (const WorkerImpl::Arg &arg);
 
  public:

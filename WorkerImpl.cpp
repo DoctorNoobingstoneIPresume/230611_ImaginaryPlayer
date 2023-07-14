@@ -44,6 +44,13 @@ Duration WorkerImpl::GetTimeToWait (const Arg &arg)
 	return rv;
 }
 
+Worker::WorkItemRV WorkerImpl::OnWakeUp (const Arg &arg, bool bWorkToDo)
+{
+	const auto rv = Do_OnWakeUp (arg, bWorkToDo);
+	Azzert ((rv & Worker::All_Mask) == rv);
+	return rv;
+}
+
 Worker::WorkItemRV WorkerImpl::OnTimeout (const Arg &arg)
 {
 	const auto rv = Do_OnTimeout (arg);

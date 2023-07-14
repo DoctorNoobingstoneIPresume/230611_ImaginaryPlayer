@@ -13,6 +13,11 @@ Duration           WorkerImpl_Player::Do_GetTimeToWait (const Arg &arg)         
 	return _spPlayer->GetTimeToWait (arg);
 }
 
+Worker::WorkItemRV WorkerImpl_Player::Do_OnWakeUp      (const Arg &arg, bool bWorkToDo) // override
+{
+	return _spPlayer->OnWakeUp (arg, bWorkToDo);
+}
+
 Worker::WorkItemRV WorkerImpl_Player::Do_OnTimeout     (const Arg &arg)                 // override;
 {
 	return _spPlayer->OnTimeout (arg);

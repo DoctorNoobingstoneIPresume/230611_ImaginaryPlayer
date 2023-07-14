@@ -46,10 +46,12 @@ class WorkerImpl:
 
  private:
 	virtual Duration           Do_GetTimeToWait (const Arg &arg) = 0;
+	virtual Worker::WorkItemRV Do_OnWakeUp      (const Arg &arg, bool bWorkToDo) = 0;
 	virtual Worker::WorkItemRV Do_OnTimeout     (const Arg &arg) = 0;
 
  public:
 	Duration           GetTimeToWait (const Arg &arg);
+	Worker::WorkItemRV OnWakeUp      (const Arg &arg, bool bWorkToDo);
 	Worker::WorkItemRV OnTimeout     (const Arg &arg);
 };
 

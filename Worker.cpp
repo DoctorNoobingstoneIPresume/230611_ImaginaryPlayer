@@ -71,6 +71,14 @@ Worker::ThreadFn
 		
 		lock.unlock ();
 		
+		if (loc_pWorker->_pImpl)
+		{
+			const bool bWorkToDo {! loc_contspWorkItems.empty ()};
+			const auto rv {loc_pWorker->_pImpl->OnWakeUp (arg, bWorkToDo)};
+			if ((rv & Break_Mask) != Break_0)
+				break;
+		}
+		
 		bool bEndRequested {false};
 		for (const auto &spWorkItem: loc_contspWorkItems)
 		{

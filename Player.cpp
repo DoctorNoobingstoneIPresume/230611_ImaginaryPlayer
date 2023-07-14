@@ -132,13 +132,41 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			os << psz_func << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
+			os << IndentWithTitle (sMsg, psz_func) << "=> rv " << rv.count () << ".\n\n";
+			//os << psz_func << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
 		}
 	);
 	
 	return rv;
 }
 
+Worker::WorkItemRV Player::OnWakeUp (const WorkerImpl::Arg &arg, bool bWorkToDo)
+{
+	const char *const psz_func {__func__};
+	
+	#if defined __cpp_structured_bindings
+		const auto [rv, sMsg] = OnElapsedTime (arg);
+	#else
+		Duration rv; std::string sMsg; { std::tie (rv, sMsg) = OnElapsedTime (arg); }
+	#endif
+	
+	ComposeAndLog
+	(
+		_logcontext,
+		[&] (std::ostream &os)
+		{
+			std::ostringstream osTmp;
+			{
+				osTmp << psz_func << " (bWorkToDo " << bWorkToDo << ")";
+			}
+			
+			os << IndentWithTitle (sMsg, osTmp.str ());
+		}
+	);
+	
+	return Worker::RV_Normal;
+
+}
 
 Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 {
@@ -169,7 +197,7 @@ Worker::WorkItemRV Player::Show (const WorkerImpl::Arg &arg)
 			<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed               .count () << ".\n";
 	}
 				
-	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ":\n" << osMsg.str (); });
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
 	return Worker::RV_Normal;
 }
 
@@ -196,30 +224,13 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	
 	_contSongs.push_back (song);
 	
-	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ":\n" << osMsg.str (); });
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
 	
 	return Worker::RV_Normal;
 }
 
 Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
 {
-	const char *const psz_func {__func__};
-	
-	#if defined __cpp_structured_bindings
-		const auto [rv, sMsg] = OnElapsedTime (arg);
-	#else
-		Duration rv; std::string sMsg; { std::tie (rv, sMsg) = OnElapsedTime (arg); }
-	#endif
-	
-	ComposeAndLog
-	(
-		_logcontext,
-		[&] (std::ostream &os)
-		{
-			os << psz_func << ": Playing status " << _bPlaying << " => " << bPlaying << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
-		}
-	);
-	
 	if (bPlaying) _tLastPlaying = arg.ThenCrtTime ();
 	if (1)        _bPlaying = bPlaying;
 	return Worker::RV_Normal;
