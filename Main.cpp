@@ -137,6 +137,9 @@ int main ()
 							"        Puts the main thread to sleep => commands are not going to be processed for the specified duration.\n"
 							"        (This command is useful for functional tests.)\n"
 							"\n"
+							"    (Prev|Next)\n"
+							"        Jumps to the previous song or the next song (in history).\n"
+							"\n"
 							"Example of <song-description>:\n"
 							"    " << songExample << "\n"
 							"\n"
@@ -226,6 +229,12 @@ int main ()
 				else
 					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Sleep: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
+			else
+			if (Command_sTextLo == "prev")
+				Player_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([=] () { return spPlayer->PrevNext (arg, false); }));
+			else
+			if (Command_sTextLo == "next")
+				Player_spWorker->AddWorkItem (std::make_shared <Worker::WorkItem> ([=] () { return spPlayer->PrevNext (arg, true ); }));
 			else
 				{ ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Unrecognized command: \"" << Command_sText << "\" !\n"; }); continue; }
 		}

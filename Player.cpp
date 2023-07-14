@@ -18,6 +18,7 @@ Player::Player (const LogContext &logcontext):
 		Song {}.SetSongName ("Demo Song of 3 seconds").SetLength (std::chrono::seconds {3}),
 		Song {}.SetSongName ("Demo Song of 6 seconds").SetLength (std::chrono::seconds {6})
 	},
+	_iWithinHistory (-1),
 	_dtWithinSong   {0},
 	_bPlaying       {true},
 	_tLastPlaying   {Now ()},
@@ -28,14 +29,15 @@ std::ostream &Player::Put (std::ostream &os) const
 {
 	std::ostringstream osTmp;
 	{
-		osTmp << "_bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
+		osTmp << "_tLastPlaying " << _tLastPlaying.time_since_epoch ().count ();
+		osTmp << ", history " << static_cast <std::ptrdiff_t> ( _iWithinHistory) << " of " << _contHistory.size ();
+		osTmp << ", _bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
 		if (! _contSongs.empty ())
 		{
 			const Song &song {_contSongs.front ()};
 			osTmp << ", first " << song;
 		}
 		osTmp << ", _dtWithinSong " << _dtWithinSong.count ();
-		osTmp << ", _tLastPlaying " << _tLastPlaying.time_since_epoch ().count ();
 	}
 	
 	return os << osTmp.str ();
@@ -82,6 +84,11 @@ std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &
 				{
 					if (_dtWithinSong >= dtSong)
 					{
+						if (_iWithinHistory >= _contHistory.size ())
+							_contHistory.push_back (song);
+						else
+							++_iWithinHistory;
+						
 						_contSongs.pop_front ();
 						_dtWithinSong = Duration {0};
 						bSongHasChanged = true;
@@ -233,6 +240,44 @@ Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
 {
 	if (bPlaying) _tLastPlaying = arg.ThenCrtTime ();
 	if (1)        _bPlaying = bPlaying;
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
+{
+	if (bNext)
+	{
+		if (! _contSongs.empty ())
+		{
+			const Song &song {_contSongs.front ()};
+			
+			if (_iWithinHistory >= _contHistory.size ())
+				_contHistory.push_back (song);
+			else
+				++_iWithinHistory;
+			
+			_contSongs.pop_front ();
+			_tLastPlaying = arg.ThenCrtTime ();
+			_dtWithinSong = Duration {0};
+		}
+	}
+	else
+	{
+		if (! _contHistory.empty ())
+		{
+			if (_iWithinHistory >= _contHistory.size ())
+				_iWithinHistory = _contHistory.size () - 1;
+			else
+			if (_iWithinHistory)
+				--_iWithinHistory;
+			
+			_contSongs.push_front (_contHistory.at (_iWithinHistory));
+		}
+		
+		_tLastPlaying = arg.ThenCrtTime ();
+		_dtWithinSong = Duration {0};
+	}
+	
 	return Worker::RV_Normal;
 }
 

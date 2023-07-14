@@ -19,6 +19,8 @@ class Player
  private:
 	      LogContext                        _logcontext;
 	      std::deque <Song>                 _contSongs;
+	      std::deque <Song>                 _contHistory;
+	      std::size_t                       _iWithinHistory;
 	      Duration                          _dtWithinSong;
 	      bool                              _bPlaying;
 	      TimePoint                         _tLastPlaying;
