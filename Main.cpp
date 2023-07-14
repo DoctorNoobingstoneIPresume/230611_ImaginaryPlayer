@@ -55,7 +55,7 @@ int main ()
 		
 		for (;;)
 		{
-			ComposeAndLog (logcontext, [] (std::ostream &os) { os << "> "; });
+			ComposeAndLog (logcontext, [] (std::ostream &os) { os << ">\n"; });
 			std::string Command_sLine;
 			{
 				if (! std::cin)
@@ -67,6 +67,8 @@ int main ()
 				if (! std::getline (std::cin, Command_sLine))
 					{ ComposeAndLog (logcontext, [] (std::ostream &os) { std::cout << "getline has failed !\n"; }); return 1; }
 			}
+			
+			ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Processing command line: `" << Command_sLine << "`.\n"; });
 			
 			std::istringstream Command_isLine {Command_sLine};
 			Cursor cursor;
