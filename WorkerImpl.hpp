@@ -45,12 +45,12 @@ class WorkerImpl:
 	virtual ~WorkerImpl () = 0;
 
  private:
-	virtual Duration Do_GetTimeToWait (const Arg &arg) = 0;
-	virtual Worker::WorkItemRV Do_OnTimeout (const Arg &arg) = 0;
+	virtual Duration           Do_GetTimeToWait (const Arg &arg) = 0;
+	virtual Worker::WorkItemRV Do_OnTimeout     (const Arg &arg) = 0;
 
  public:
-	Duration GetTimeToWait (const Arg &arg);
-	Worker::WorkItemRV OnTimeout (const Arg &arg);
+	Duration           GetTimeToWait (const Arg &arg);
+	Worker::WorkItemRV OnTimeout     (const Arg &arg);
 };
 
 std::ostream &operator<< (std::ostream &os, const WorkerImpl::Arg &object);
