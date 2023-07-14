@@ -2,6 +2,7 @@
 #include "WorkerImpl.hpp"
 
 #include <iostream>
+#include <iomanip>
 #include <utility>
 
 namespace ImaginaryPlayer
@@ -46,10 +47,14 @@ Worker::ThreadFn
 		std::cv_status status;
 		
 		std::unique_lock <std::mutex> lock (loc_pWorker->_mtx);
-		while (loc_pWorker->_contspWorkItems.empty ())
+		for (std::size_t iRetry = 0; loc_pWorker->_contspWorkItems.empty (); ++iRetry)
 		{
-			const auto tUntil {tNow + (dtWait_b ? dtWait : Duration {60 * 1000})};
-			status = loc_pWorker->_cv.wait_until (lock, tUntil);
+			const auto dtFor {dtWait_b ? dtWait : Duration {60 * 1000}};
+			
+			// [2023-07-14] We are trying to debug excessive use of CPU which happens sometimes (as guided by GDB's attaching to the process):
+			if (iRetry >= 10 && loc_pWorker->_pImpl) std::cout << "dtFor " << std::setw (7) << dtFor.count () << "...\n" << std::flush;
+			
+			status = loc_pWorker->_cv.wait_until (lock, tNow + dtFor);
 			if (status == std::cv_status::timeout && dtWait_b)
 				break;
 		}
