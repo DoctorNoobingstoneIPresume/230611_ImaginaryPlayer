@@ -36,8 +36,8 @@ int main ()
 			"}\n"
 		};
 		
-		//const auto r2 {IndentWithTitle (s0, "Title")};
-		//std::cout << r2 << "\n";
-		//Azzert (r2 == s2);
+		const auto r2 {IndentWithTitle (s0, "Title")};
+		std::cout << r2 << "\n";
+		Azzert (r2 == s2);
 	}
 }

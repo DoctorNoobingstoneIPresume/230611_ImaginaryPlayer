@@ -141,6 +141,8 @@ IndentWithTitle
 		rv += sIndented;
 		rv += "}\n";
 	}
+	
+	return rv;
 }
 
 }
