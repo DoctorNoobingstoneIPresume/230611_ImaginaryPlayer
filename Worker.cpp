@@ -1,6 +1,10 @@
 #include "Worker.hpp"
 #include "WorkerImpl.hpp"
 
+#ifndef IMAGINARYPLAYER_Worker_iDebug
+ #define IMAGINARYPLAYER_Worker_iDebug 0
+#endif
+
 #include <iostream>
 #include <iomanip>
 #include <utility>
@@ -32,7 +36,7 @@ Worker::ThreadFn
 	//class spWorker;
 	Worker *const loc_pWorker {loc_spWorker.get ()};
 	
-	std::cout << "{ Worker::ThreadFn\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "{ Worker::ThreadFn\n" << std::flush;
 	
 	for (;;)
 	{
@@ -52,7 +56,7 @@ Worker::ThreadFn
 			const auto dtFor {dtWait_b ? dtWait : Duration {60 * 1000}};
 			
 			// [2023-07-14] We are trying to debug excessive use of CPU which happens sometimes (as guided by GDB's attaching to the process):
-			if (iRetry >= 10 && loc_pWorker->_pImpl) std::cout << "dtFor " << std::setw (7) << dtFor.count () << "...\n" << std::flush;
+			if (IMAGINARYPLAYER_Worker_iDebug) if (iRetry >= 10 && loc_pWorker->_pImpl) std::cout << "dtFor " << std::setw (7) << dtFor.count () << "...\n" << std::flush;
 			
 			status = loc_pWorker->_cv.wait_until (lock, tNow + dtFor);
 			
@@ -103,7 +107,7 @@ Worker::ThreadFn
 		}
 	}
 	
-	std::cout << "} Worker::ThreadFn\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "} Worker::ThreadFn\n" << std::flush;
 }
 
 void
@@ -118,7 +122,7 @@ Worker::AddWorkItem
 
 ScopedWorkerThread::~ScopedWorkerThread ()
 {
-	std::cout << "Joinable " << _thread.joinable () << ".\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "Joinable " << _thread.joinable () << ".\n" << std::flush;
 	_spWorker->AddWorkItem (nullptr);
 	_thread.join ();
 }
