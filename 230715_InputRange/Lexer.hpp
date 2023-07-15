@@ -13,6 +13,13 @@
 namespace ImaginaryPlayer
 {
 
+template <typename Char>
+class InputRange;
+
+lyb::optional <std::vector <Token>>
+Tokenize
+(InputRange <char> *pInputRange, const std::ctype <char> &ctype = std::use_facet <std::ctype <char>> (std::locale {}));
+
 class Cursor;
 
 lyb::optional <Token>
@@ -167,6 +174,14 @@ getline_paren
 	
 	return is;
 }
+
+lyb::optional <std::vector <Token>>
+Tokenize_paren
+(std::istream &is, char cParenLeft = '(', char cParenRite = ')');
+
+lyb::optional <int64_t>
+to_int64_t
+(InputRange <char> *pInputRange, const std::ctype <char> &ctype = std::use_facet <std::ctype <char>> (std::locale {}));
 
 lyb::optional <int64_t>
 ExtractIntegral

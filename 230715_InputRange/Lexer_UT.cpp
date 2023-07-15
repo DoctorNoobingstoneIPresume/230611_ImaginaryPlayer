@@ -1,4 +1,5 @@
 #include "Lexer.hpp"
+#include "InputRange_SV.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -12,7 +13,7 @@ int main ()
 	
 	const char *const input {"  Hello, there from \"   the most beautiful place   \" on...      Earth !!"};
 	
-	const char *const apszExpected []
+	const char *const apszTokens []
 	{
 		"Hello",
 		",",
@@ -28,18 +29,30 @@ int main ()
 		"!"
 	};
 	
-	const std::size_t nExpected = nelems (apszExpected);
+	const std::size_t nTokens = nelems (apszTokens);
+	
+	{
+		InputRange_SV <char> inputrange {input};
+		
+		const auto result {Tokenize (&inputrange)};
+		
+		Azzert (result);
+		
+		Azzert (result->size () == nTokens);
+		for (std::size_t iToken = 0; iToken < nTokens; ++iToken)
+			Azzert (! std::strcmp ((*result).at (iToken).GetTextQ ().data (), apszTokens [iToken]));
+	}
 	
 	{
 		std::istringstream is (input);
 		
-		for (std::size_t iExpected = 0; iExpected < nExpected; ++iExpected)
+		for (std::size_t iToken = 0; iToken < nTokens; ++iToken)
 		{
 			const auto optToken {ExtractToken (is)};
 			Azzert (optToken);
 			
-			std::cout << std::setw (2) << iExpected << ": `" << optToken->GetText () << "`\n";
-			Azzert (! std::strcmp (optToken->GetTextQ ().data (), apszExpected [iExpected]));
+			std::cout << std::setw (2) << iToken << ": `" << optToken->GetText () << "`\n";
+			Azzert (! std::strcmp (optToken->GetTextQ ().data (), apszTokens [iToken]));
 		}
 		
 		{

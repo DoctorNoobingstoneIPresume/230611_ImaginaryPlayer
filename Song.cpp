@@ -1,5 +1,6 @@
 #include "Song.hpp"
 #include "Lexer.hpp"
+#include "Cursor.hpp"
 
 #include <string>
 
@@ -53,20 +54,23 @@ std::ostream &Song::Put (std::ostream &os) const
 
 std::istream &Song::Get (std::istream &is)
 {
-	const auto optcontTokens {Tokenize_paren (is)};
-	if (! optcontTokens)
-		{ is.setstate (std::ios_base::failbit); return is; }
-	
-	const std::vector <Token> &contTokens {*optcontTokens};
-	const std::size_t          nTokens    {contTokens.size ()};
+	std::string sInput;
+	{
+		if (! getline_paren (is, sInput))
+			// [2023-07-15] TODO: `failbit` has probably already been set => could/should we skip setting it in the next line ?
+			{ is.setstate (std::ios_base::failbit); return is; }
+	}
 	
 	      bool                 bSuccess   {false};
 	      unsigned             iState     {0};
 	      std::string          sKey;
 	      std::size_t          iToken     {0};
 	
-	for (const auto &token: contTokens)
+	      std::istringstream   isInput    {sInput};
+	      Cursor cursor;
+	while (const auto opttoken = ExtractToken (isInput, &cursor))
 	{
+		const auto &token {*opttoken};
 		const std::string sText {token.GetText ()};
 		
 		if (! iState)
