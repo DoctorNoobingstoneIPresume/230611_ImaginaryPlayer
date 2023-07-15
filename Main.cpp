@@ -127,6 +127,9 @@ int main ()
 							"    (Show|ShowPlayer)\n"
 							"        Displays debugging information about the Player.\n"
 							"\n"
+							"    Verb <level>\n"
+							"        Sets the verbosity level for the Player. Default is `0`.\n"
+							"\n"
 							"    AddSong (<song-description>)\n"
 							"        Adds the specified song to the queue.\n"
 							"\n"
@@ -162,6 +165,23 @@ int main ()
 						[=] () { return spPlayer->Show (arg); }
 					)
 				);
+			}
+			else
+			if (Command_sTextLo == "verb")
+			{
+				if (const auto opti = ExtractIntegral (Command_isRestOfLine))
+				{
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Verb: New verbosity level " << *opti << ".\n"; });
+					Player_spWorker->AddWorkItem
+					(
+						std::make_shared <Worker::WorkItem>
+						(
+							[=] () { return spPlayer->Verb (arg, *opti); }
+						)
+					);
+				}
+				else
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Verb: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
 			if (Command_sTextLo == "addsong")

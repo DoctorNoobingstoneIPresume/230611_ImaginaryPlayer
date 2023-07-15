@@ -13,6 +13,7 @@ namespace ImaginaryPlayer
 
 Player::Player (const LogContext &logcontext):
 	_logcontext     {logcontext},
+	_iVerb          {0},
 	_contSongs
 	{
 		Song {}.SetSongName ("Demo Song of 3 seconds").SetLength (std::chrono::seconds {3}),
@@ -29,21 +30,70 @@ std::ostream &Player::Put (std::ostream &os) const
 {
 	std::ostringstream osTmp;
 	{
-		osTmp << "_tLastPlaying " << _tLastPlaying.time_since_epoch ().count ();
-		osTmp << ", history " << static_cast <std::ptrdiff_t> ( _iWithinHistory) << " of " << _contHistory.size ();
-		osTmp << ", _bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
+		osTmp
+			<< "_iVerb " << _iVerb
+			<< ", "
+			<< "_tLastPlaying " << _tLastPlaying.time_since_epoch ().count ()
+			<< ", "
+			<< "history " << static_cast <std::ptrdiff_t> ( _iWithinHistory) << " of " << _contHistory.size ()
+			<< ", "
+			<< "_bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
+		
 		if (! _contSongs.empty ())
 		{
 			const Song &song {_contSongs.front ()};
-			osTmp << ", first " << song;
+			osTmp
+				<< ", "
+				<< "first " << song;
 		}
-		osTmp << ", _dtWithinSong " << _dtWithinSong.count ();
+		
+		osTmp
+			<< ", "
+			<< "_dtWithinSong " << _dtWithinSong.count ();
 	}
 	
 	return os << osTmp.str ();
 }
 
-std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &arg)
+class Player::OnElapsedTimeRV
+{
+ private:
+	      Duration                  _dt;
+	      std::string               _sShortMsg;
+	      std::string               _sLongMsg;
+
+ public:
+	Duration          GetDuration  ()                       const;
+	OnElapsedTimeRV  &SetDuration  (Duration value);
+	
+	std::string       GetShortMsg  ()                       const;
+	lyb::string_view  GetShortMsgQ ()                       const;
+	OnElapsedTimeRV  &SetShortMsg  (lyb::string_view value);
+	
+	std::string       GetLongMsg   ()                       const;
+	lyb::string_view  GetLongMsgQ  ()                       const;
+	OnElapsedTimeRV  &SetLongMsg   (lyb::string_view value);
+
+ public:
+	OnElapsedTimeRV ();
+};
+
+Duration                  Player::OnElapsedTimeRV::GetDuration  ()                       const { return _dt; }
+Player::OnElapsedTimeRV  &Player::OnElapsedTimeRV::SetDuration  (Duration value)               { _dt = value; return *this; }
+
+std::string               Player::OnElapsedTimeRV::GetShortMsg  ()                       const { return _sShortMsg; }
+lyb::string_view          Player::OnElapsedTimeRV::GetShortMsgQ ()                       const { return _sShortMsg; }
+Player::OnElapsedTimeRV  &Player::OnElapsedTimeRV::SetShortMsg  (lyb::string_view value)       { _sShortMsg = lyb::ViewToString (value); return *this; }
+
+std::string               Player::OnElapsedTimeRV::GetLongMsg   ()                       const { return _sLongMsg; }
+lyb::string_view          Player::OnElapsedTimeRV::GetLongMsgQ  ()                       const { return _sLongMsg; }
+Player::OnElapsedTimeRV  &Player::OnElapsedTimeRV::SetLongMsg   (lyb::string_view value)       { _sLongMsg = lyb::ViewToString (value); return *this; }
+
+Player::OnElapsedTimeRV::OnElapsedTimeRV ():
+	_dt {-1}
+{}
+
+Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 {
 	// [2023-07-12] In the lambda given to `ComposeAndLog`, `__func__` is `"operator()"`. But what we want is `"GetTimeToWait"`. So we prepare that in `psz_func`.
 	const char *const psz_func {__func__};
@@ -53,6 +103,8 @@ std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &
 		osMsg << "arg:     " << arg << ".\n";
 		osMsg << "Initial: " << *this << ".\n";
 	}
+	
+	std::ostringstream osShortMsg;
 	
 	Duration rv {-1};
 	{
@@ -65,6 +117,9 @@ std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &
 			{
 				const Song &song {_contSongs.front ()};
 				const auto dtSong {song.GetLength ()}; Azzert (_dtWithinSong <= dtSong);
+				//if (! _dtWithinSong.count ())
+				//	osShortMsg << "We have startedd playing " << _contSongs.front () << ".\n";
+				
 				const auto dtSongRemaining {dtSong - _dtWithinSong};
 				
 				const auto dtElapsed {tNow - _tLastPlaying};
@@ -89,9 +144,14 @@ std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &
 						else
 							++_iWithinHistory;
 						
+						osShortMsg << "We have finished playing " << song << ".\n";
+						
 						_contSongs.pop_front ();
 						_dtWithinSong = Duration {0};
 						bSongHasChanged = true;
+						
+						if (! _contSongs.empty ())
+							osShortMsg << "We have started  playing " << _contSongs.front () << ".\n";
 					}
 				}
 				
@@ -116,7 +176,7 @@ std::pair <Duration, std::string> Player::OnElapsedTime (const WorkerImpl::Arg &
 		}
 	}
 	
-	return std::make_pair (rv, osMsg.str ());
+	return OnElapsedTimeRV {}.SetDuration (rv).SetShortMsg (osShortMsg.str ()).SetLongMsg (osMsg.str ());
 }
 
 Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
@@ -124,52 +184,48 @@ Duration Player::GetTimeToWait (const WorkerImpl::Arg &arg)
 	// [2023-07-12] In the lambda given to `ComposeAndLog`, `__func__` is `"operator()"`. But what we want is `"GetTimeToWait"`. So we prepare that in `psz_func`.
 	const char *const psz_func {__func__};
 	
-	#if defined __cpp_structured_bindings
-		const auto [rv, sMsg] = OnElapsedTime (arg);
-	#else
-		Duration rv;
-		std::string sMsg;
-		{
-			std::tie (rv, sMsg) = OnElapsedTime (arg);
-		}
-	#endif
+	const auto result0 {OnElapsedTime (arg)};
 	
+	if (_iVerb)
 	ComposeAndLog
 	(
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			os << IndentWithTitle (sMsg, psz_func) << "=> rv " << rv.count () << ".\n\n";
-			//os << psz_func << ":\n" << sMsg << "=> rv " << rv.count () << ".\n\n";
+			if (_iVerb)
+				os << IndentWithTitle (result0.GetLongMsg (), psz_func) << "=> rv " << result0.GetDuration ().count () << ".\n\n";
 		}
 	);
 	
-	return rv;
+	if (result0.GetShortMsgQ ().size ())
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (result0.GetShortMsg (), psz_func); });
+	
+	return result0.GetDuration ();
 }
 
 Worker::WorkItemRV Player::OnWakeUp (const WorkerImpl::Arg &arg, bool bWorkToDo)
 {
 	const char *const psz_func {__func__};
 	
-	#if defined __cpp_structured_bindings
-		const auto [rv, sMsg] = OnElapsedTime (arg);
-	#else
-		Duration rv; std::string sMsg; { std::tie (rv, sMsg) = OnElapsedTime (arg); }
-	#endif
+	const auto result0 {OnElapsedTime (arg)};
 	
+	std::ostringstream osTitle;
+	{
+		osTitle << psz_func << " (bWorkToDo " << bWorkToDo << ")";
+	}
+	
+	if (_iVerb)
 	ComposeAndLog
 	(
 		_logcontext,
 		[&] (std::ostream &os)
 		{
-			std::ostringstream osTmp;
-			{
-				osTmp << psz_func << " (bWorkToDo " << bWorkToDo << ")";
-			}
-			
-			os << IndentWithTitle (sMsg, osTmp.str ());
+			os << IndentWithTitle (result0.GetLongMsg (), osTitle.str ());
 		}
 	);
+	
+	if (result0.GetShortMsgQ ().size ())
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (result0.GetShortMsg (), osTitle.str ()); });
 	
 	return Worker::RV_Normal;
 
@@ -179,7 +235,9 @@ Worker::WorkItemRV Player::OnTimeout (const WorkerImpl::Arg &arg)
 {
 	const char *const psz_func {__func__};
 	
-	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ": Timeout.\n"; });
+	if (_iVerb)
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << psz_func << ": Timeout.\n"; });
+	
 	return Worker::RV_Normal;
 }
 
@@ -208,6 +266,24 @@ Worker::WorkItemRV Player::Show (const WorkerImpl::Arg &arg)
 	return Worker::RV_Normal;
 }
 
+Worker::WorkItemRV Player::Verb (const WorkerImpl::Arg &arg, unsigned iVerb)
+{
+	iVerb = std::min (iVerb, 1u);
+	
+	ComposeAndLog
+	(
+		_logcontext,
+		[&] (std::ostream &os)
+		{
+			os << "Setting verbosity level to " << iVerb << ".\n";
+		}
+	);
+	
+	_iVerb = iVerb;
+	
+	return Worker::RV_Normal;
+}
+
 Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song)
 {
 	const char *const psz_func {__func__};
@@ -231,7 +307,8 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	
 	_contSongs.push_back (song);
 	
-	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
+	if (_iVerb)
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
 	
 	return Worker::RV_Normal;
 }
@@ -239,7 +316,11 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
 {
 	if (! _bPlaying && bPlaying)
+	{
 		_tLastPlaying = arg.ThenCrtTime ();
+		if (! _dtWithinSong.count ())
+			ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << "We have startedd playing " << _contSongs.front () << ".\n"; });
+	}
 	
 	_bPlaying = bPlaying;
 	

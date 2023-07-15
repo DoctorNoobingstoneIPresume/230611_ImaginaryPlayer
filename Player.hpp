@@ -9,6 +9,7 @@
 #include <chrono>
 #include <memory>
 #include <deque>
+#include <tuple>
 #include <utility>
 
 namespace ImaginaryPlayer
@@ -18,6 +19,7 @@ class Player
 {
  private:
 	      LogContext                        _logcontext;
+	      unsigned                          _iVerb;
 	      std::deque <Song>                 _contSongs;
 	      std::deque <Song>                 _contHistory;
 	      std::size_t                       _iWithinHistory;
@@ -33,7 +35,8 @@ class Player
 	explicit Player (const LogContext &logcontext);
 
  private:
-	std::pair <Duration, std::string> OnElapsedTime   (const WorkerImpl::Arg &arg);
+	class OnElapsedTimeRV;
+	OnElapsedTimeRV                   OnElapsedTime   (const WorkerImpl::Arg &arg);
 
  public:
 	Duration                          GetTimeToWait   (const WorkerImpl::Arg &arg);
@@ -42,6 +45,7 @@ class Player
 
  public:
 	Worker::WorkItemRV                Show            (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV                Verb            (const WorkerImpl::Arg &arg, unsigned iVerb);
 	Worker::WorkItemRV                AddSong         (const WorkerImpl::Arg &arg, const Song &song);
 	Worker::WorkItemRV                Play            (const WorkerImpl::Arg &arg, bool bPlaying);
 	Worker::WorkItemRV                PrevNext        (const WorkerImpl::Arg &arg, bool bNext);
