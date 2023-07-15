@@ -238,8 +238,11 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 
 Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
 {
-	if (bPlaying) _tLastPlaying = arg.ThenCrtTime ();
-	if (1)        _bPlaying = bPlaying;
+	if (! _bPlaying && bPlaying)
+		_tLastPlaying = arg.ThenCrtTime ();
+	
+	_bPlaying = bPlaying;
+	
 	return Worker::RV_Normal;
 }
 
