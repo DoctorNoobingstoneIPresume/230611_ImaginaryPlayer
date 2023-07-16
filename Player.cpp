@@ -23,6 +23,7 @@ Player::Player (const LogContext &logcontext):
 	_dtWithinSong   {0},
 	_bPlaying       {true},
 	_tLastPlaying   {Now ()},
+	_bNewSong       {true},
 	_dtPing         {0}
 {}
 
@@ -149,9 +150,7 @@ Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 						_contSongs.pop_front ();
 						_dtWithinSong = Duration {0};
 						bSongHasChanged = true;
-						
-						if (! _contSongs.empty ())
-							osShortMsg << "We have started  playing " << _contSongs.front () << ".\n";
+						_bNewSong = true;
 					}
 				}
 				
@@ -172,6 +171,12 @@ Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 				//rv = std::max (rv, Duration {4000});
 				if (_dtPing > Duration {0})
 					rv = std::min (rv, _dtPing);
+				
+				if (_bNewSong)
+				{
+					osShortMsg << "We have started  playing " << song << ".\n";
+					_bNewSong = false;
+				}
 			}
 		}
 	}
@@ -297,6 +302,7 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	{
 		osMsg << "Updating _tLastPlaying...\n";
 		_tLastPlaying = arg.ThenCrtTime ();
+		_bNewSong     = true;
 	}
 	
 	const auto dtElapsed {arg.ThenCrtTime () - _tLastPlaying};
@@ -343,6 +349,7 @@ Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
 			_contSongs.pop_front ();
 			_tLastPlaying = arg.ThenCrtTime ();
 			_dtWithinSong = Duration {0};
+			_bNewSong     = true;
 		}
 	}
 	else
@@ -360,6 +367,7 @@ Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
 		
 		_tLastPlaying = arg.ThenCrtTime ();
 		_dtWithinSong = Duration {0};
+		_bNewSong     = true;
 	}
 	
 	return Worker::RV_Normal;

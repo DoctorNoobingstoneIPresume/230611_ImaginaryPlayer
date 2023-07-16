@@ -26,6 +26,7 @@ class Player
 	      Duration                          _dtWithinSong;
 	      bool                              _bPlaying;
 	      TimePoint                         _tLastPlaying;
+	      bool                              _bNewSong;
 	      Duration                          _dtPing;
 
  public:
