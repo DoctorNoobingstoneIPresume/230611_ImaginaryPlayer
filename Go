@@ -8,6 +8,10 @@ ytimeq ()
 
 Main ()
 {
+	printf "Producing the documentation...\n{\n"
+	which asciidoctor && asciidoctor -b html5 "README.adoc" -o "README.html" || true
+	printf "}\n\n"
+	
 	printf "Building...\n{\n"
 	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
 	
