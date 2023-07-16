@@ -95,7 +95,26 @@ Example of `<song-description>`:
 == Functional test
 
 By running `"./Test"`, a functional test (in `"./Test.pl"`) is going to be executed.
-It feeds the input in the script to the `"_Build/Main"` program, captures the output, and analyzes it.
+It feeds the input in the script to the `"_Build/Main"` program:
+
+```
+Sleep 10000
+AddSong (length 1000)
+Sleep 100
+Prev
+Sleep 100
+Prev
+Sleep 100
+Prev
+Sleep 100
+Next
+Sleep 100
+Next
+Sleep 100
+Next
+Sleep 2000
+Exit
+```
 
 
 
@@ -103,7 +122,9 @@ It feeds the input in the script to the `"_Build/Main"` program, captures the ou
 
 Classes (and class templates) and functions (and function templates) are named `LikeThis`.
 
-Variables are named `likeThis`. Member variables are named `_likeThis`.
+Variables are named `likeThis`.
+
+Member variables are named `_likeThis`.
 
 Where possible, there is a whitespace between text and opening parenthesis (just like in normal text (for example, in this very line you are reading now)).
 
