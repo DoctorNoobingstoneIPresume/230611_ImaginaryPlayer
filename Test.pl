@@ -48,6 +48,7 @@ sub Main
 			my $s0 = <<'END_MESSAGE';
 Sleep 10000
 AddSong (length 1000)
+Sleep 100
 Prev
 Sleep 100
 Prev

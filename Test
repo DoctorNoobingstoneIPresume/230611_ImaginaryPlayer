@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e -o pipefail
+
+ytimeq ()
+{
+	TIME="TimeQ: elapsed %E (ring3 %U, ring0 %S, CPU %P)." "$(which time)" "$@"
+}
+
+Main ()
+{
+	printf "Testing functionality...\n{\n"
+	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
+	
+	ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "./Test.pl" "$@"
+	
+	printf "}\n\n"
+}
+
+Main "$@"

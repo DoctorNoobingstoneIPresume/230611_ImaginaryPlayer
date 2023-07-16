@@ -94,7 +94,7 @@ Example of `<song-description>`:
 
 == Functional test
 
-By running `"./Test.pl"`, a functional test is going to be executed.
+By running `"./Test"`, a functional test (in `"./Test.pl"`) is going to be executed.
 It feeds the input in the script to the `"_Build/Main"` program, captures the output, and analyzes it.
 
 
