@@ -31,6 +31,7 @@ Alternatively, we can use the custom build system (with some hardcoding, current
 
 This is going to:
 
+* transform `README.adoc` in `README.html` (if the `asciidoctor` Ruby gem is available);
 * compile each `.cpp` file;
 * gather together most object files into an archive (a static library);
 * link the shared library and the `Main.o` object file into the `Main` executable;
@@ -80,7 +81,7 @@ The `"help"` command is going to show a list of available commands. Commands are
 |`Sleep <number-of-milliseconds>`
 | Puts the main thread to sleep => commands are not going to be processed for the specified duration. (This command is useful for functional tests.)
 
-|`Prev|Next`
+|`Prev\|Next`
 | Jumps to the previous song or to the next song (in history).
 |===
 
@@ -157,7 +158,7 @@ Often-used prefixes:
 |Pointer to NUL-terminated array of characters ("pointer to zero-terminated string").
 
 |`sv\|s`
-|String view (`std::string_view` etc.). Often, when the distinction between `std::string` and `std::string_view` is merely related to optimization, we use `s` for `string_view`'s too.
+|String view (`std::string_view` etc.). Often, when the distinction between `std::string` and `std::string_view` is merely related to optimization, we use `s` for `string_view`\'s too.
 
 |`cont`
 |Container.
@@ -172,13 +173,28 @@ Often-used prefixes:
 |Pointer.
 
 |`sp`
-|`std::shared_ptr <...>`. Note that when the distinction between `std::shared_ptr <...>`'s and raw pointer is not important, we might use `p` for `std::shared_ptr <...>`'s too.
+|`std::shared_ptr <...>`. Note that when the distinction between `std::shared_ptr <...>`\'s and raw pointer is not important, we might use `p` for `std::shared_ptr <...>`\'s too.
 
 |`rv`
 |Return value.
 
 |`value`
 |Variable holding the argument of a setter function.
+
+|`song`
+|`Song` object. This convention is used in many places, e.g. `worker` prefix for `Worker` objects etc.
+
+|`t`
+|`TimePoint` object.
+
+|`dt`
+|`Duration` object.
+
+|`cc`
+|Count of characters.
+
+|`cc_dt`
+|Count of characters used for displaying durations (as argument to `std::setw`).
 
 |===
 
@@ -263,3 +279,199 @@ We have three threads:
 * two Worker threads: the Player thread and the Logger thread.
 
 The Logger thread is responsible for logging (`std::cout` output).
+Both the Main thread and the Player thread issue "logging" commands to the Logger thread.
+That way, we do not need to lock a mutex while emitting output to `std::cout`,
+which would have broken the "Avoid calling unknown code while inside a critical section" rule
+(described in Herb Sutter's 2007 article: https://herbsutter.com/2007/11/06/effective-concurrency-avoid-calling-unknown-code-while-inside-a-critical-section/).
+
+For similar purposes, all interaction with the `Player` object is done on the Player thread.
+
+The Main thread is responsible for reading and lexing and parsing user input (the commands and their arguments)
+and for enqueuing commands for the Player thread.
+
+Log messages emitted via the Logger thread are prefixed with either `"[Main]"` or `"[Play]"`,
+in order to show which thread which has demanded the logging.
+Log messages are also prefixed with the timestamp (monotonic time elapsed since process start).
+
+Example:
+
+```
+[  3000] [Play] GetTimeToWait
+{
+        We have finished playing (artist "", song "Demo Song of 3 seconds", codec "", length 3000).
+        We have started  playing (artist "", song "Demo Song of 6 seconds", codec "", length 6000).
+}
+[  9000] [Play] GetTimeToWait
+{
+        We have finished playing (artist "", song "Demo Song of 6 seconds", codec "", length 6000).
+}
+exit
+[ 11280] [Main] Processing command line: `exit`.
+Buh-bye, Imaginary World !
+```
+
+
+
+== `Worker` objects
+
+A `Worker` object implements a message queue for a worker thread.
+
+```
+class Worker
+{
+...
+ public:
+	// [2023-06-17] Class mechanics:
+	//   We have a `unique_ptr <IncompleteType>` member variable => we need a destructor which sees the complete type.
+	//   We also have a `mutex` and a `condition_variable`       => no move operations.
+	~Worker
+	();
+	
+	explicit
+	Worker
+	(std::unique_ptr <WorkerImpl> pImpl = nullptr);
+	
+	static
+	void
+	ThreadFn
+	(const std::shared_ptr <Worker> &spWorker);
+	
+	void
+	AddWorkItem
+	(const SPWorkItem &spWorkItem);
+};
+```
+
+The `AddWorkItem` non-static member function can be called on any thread and adds a work item (a command to execute) to the queue:
+
+```
+void
+Worker::AddWorkItem
+(const std::shared_ptr <WorkItem> &spWorkItem)
+{
+	std::unique_lock <std::mutex> lock (_mtx);
+	_contspWorkItems.push_back (spWorkItem);
+	lock.unlock ();
+	_cv.notify_all ();
+}
+```
+
+The `ThreadFn` static member function is the main function of the worker thread.
+It "pumps the message loop" by waiting on the condvar to be signaled (via `AddWorkItem`),
+actually waiting for the container of work items to contain at least one command to execute.
+
+Then, after having woken up from the waiting, with the mutex still locked, it extracts the work items in a local container (by moving/swapping them and/or by moving/swapping the container => no unknown code is called with the mutex locked).
+
+Then it unlocks the mutex and starts executing the work items.
+
+An empty work item is an indication that the loop should be stopped.
+Even more, each work item may return a value with a bit set in order to indicate that the loop should be stopped.
+
+
+
+== `ScopedWorkerThread`
+
+A `ScopedWorkerThread` object is given a shared pointer to a `Worker` object.
+Its constructor stores a copy of the shared pointer to the `Worker` object and spawns a thread running `Worker::ThreadFn`.
+Its destructor adds an empty work item to the `Worker` object and then joins the worker thread.
+
+(A `ScopedWorkerThread` object is similar to a `boost::scoped_thread <...>` object or to an `std::jthread` object.)
+
+Examples of usage: initialization on the Main thread:
+
+```
+const auto Logger_spWorker {std::make_shared <Worker> ()};
+const auto Logger_jthread {ScopedWorkerThread {Logger_spWorker}};
+
+const auto t0 {Now ()};
+const auto logcontext     {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Main")};
+const auto logcontextPlay {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Play")};
+
+const auto spPlayer {std::make_shared <Player> (logcontextPlay)};
+const auto Player_spWorker {std::make_shared <Worker> (std::make_unique <WorkerImpl_Player> (spPlayer))};
+const auto Player_jthread {ScopedWorkerThread {Player_spWorker}};
+
+ComposeAndLog (logcontext, [] (std::ostream &os) { os << "Surprise !\n"; });
+```
+
+
+
+== `WorkerImpl`-derived objects
+
+A `Worker` object is optionally configured with a `WorkerImpl`-derived object (passed via `unique_ptr` to the `Worker`'s constructor).
+This `WorkerImpl`-derived object specifies:
+
+* a timeout for the condvar waiting (returned by a callback invoked before each waiting);
+* a callback to execute before processing the work items detected in the queue;
+* a callback to execute on condvar waiting timeout (currently not used).
+
+This allows a common skeleton for the message pumping loop,
+but also allows differences between the Logger thread and the Player thread.
+
+Specifically, the Player thread has to wake up from the condvar waiting not just when receiving a work item (a command to execute),
+but also when the timeout expires (when the current song has finished playing).
+Therefore, the Player `Worker` object is configured with a `WorkerImpl_Player` object.
+
+Currently, the callbacks in the `WorkerImpl_Player` object just delegate work to similar functions in an aggregated (via `shared_ptr`) `Player` object.
+This allows the `Player` object to be shared between the Main thread and the Player thread.
+(Otherwise, the `WorkerImpl_Player` object would have needed to be shared, and possibly its exact type would have needed to be recovered by downcasting.)
+
+Example of how the shared `Player` object is used in the Main thread:
+
+```
+...
+else
+if (Command_sTextLo == "pause")
+{
+	Player_spWorker->AddWorkItem
+	(
+		std::make_shared <Worker::WorkItem>
+		(
+			[=] () { return spPlayer->Play (arg, false); }
+		)
+	);
+}
+else
+if (Command_sTextLo == "play")
+{
+	Player_spWorker->AddWorkItem
+	(
+		std::make_shared <Worker::WorkItem>
+		(
+			[=] () { return spPlayer->Play (arg, true); }
+		)
+	);
+}
+else
+...
+```
+
+
+
+== `WorkItem`s vs logging: capturing by value vs capturing by reference
+
+In the lambdas for `Worker::AddWorkItem`, we capture by value, because the command is going to be executed on another thread.
+
+(We have seen an example at the end of the previous section.)
+
+In the lambdas for logging, we capture by reference, because the composing of the log message runs on the caller thread
+(then the resulting message is passed to the other thread by the `ComposeAndLog` infrastructure).
+
+Example:
+
+```
+ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "\n" << osHelp.str (); });
+```
+
+The `std::ostream &os` is a reference to an `std::ostringstream` object
+created by the `ComposeAndLog` infrastructure to allow the user to compose the message.
+
+The `logcontext` object stores the "thread name" (prefix for log messages) and a copy of the `shared_ptr` to the `Worker` object
+(and the initial timestamp -- in order to generate relative timestamps in the logs).
+Once again, here is an example of the two `LogContext` objects (as created in the `main` function):
+
+```
+const auto t0 {Now ()};
+const auto logcontext     {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Main")};
+const auto logcontextPlay {LogContext {t0}.SetSPWorker (Logger_spWorker).SetThreadName ("Play")};
+```
