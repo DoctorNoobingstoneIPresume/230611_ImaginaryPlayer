@@ -472,6 +472,19 @@ else
 
 
 
+== `WorkItem::Arg` argument for virtual functions and their wrappers
+
+What if, in the future, we decide we need to add a certain argument to one of the virtual functions ?
+
+Then we are going to have to modify the source code not just for the base class, but for all implementations (i.e. for all of the derived classes).
+
+In order to make our life easy, we are going to pass (to these virtual functions) an argument of type `Arg` (by reference-to-const),
+so that we can add more variables inside that `Arg` object.
+
+Currently, a `WorkItem::Arg` object only holds the current timestamp (the "now" moment).
+
+
+
 == `WorkItem`s vs logging: capturing by value vs capturing by reference
 
 In the lambdas for `Worker::AddWorkItem`, we capture by value, because the command is going to be executed on another thread.
