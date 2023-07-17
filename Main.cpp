@@ -127,6 +127,9 @@ int main ()
 							"    (Show|ShowPlayer)\n"
 							"        Displays debugging information about the Player.\n"
 							"\n"
+							"    ShowSongs\n"
+							"        Displays songs.\n"
+							"\n"
 							"    Verb <level>\n"
 							"        Sets the verbosity level for the Player. Default is `0`.\n"
 							"\n"
@@ -169,6 +172,17 @@ int main ()
 					std::make_shared <Worker::WorkItem>
 					(
 						[=] () { return spPlayer->Show (arg); }
+					)
+				);
+			}
+			else
+			if (Command_sTextLo == "showsongs")
+			{
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->ShowSongs (arg); }
 					)
 				);
 			}

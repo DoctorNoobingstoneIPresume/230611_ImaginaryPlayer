@@ -52,6 +52,7 @@ class Player
 
  public:
 	Worker::WorkItemRV                Show            (const WorkerImpl::Arg &arg);
+	Worker::WorkItemRV                ShowSongs       (const WorkerImpl::Arg &arg);
 	Worker::WorkItemRV                Verb            (const WorkerImpl::Arg &arg, unsigned iVerb);
 	Worker::WorkItemRV                AddSong         (const WorkerImpl::Arg &arg, const Song &song);
 	Worker::WorkItemRV                Play            (const WorkerImpl::Arg &arg, bool bPlaying);

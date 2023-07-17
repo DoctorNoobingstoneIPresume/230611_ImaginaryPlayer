@@ -377,6 +377,53 @@ Worker::WorkItemRV Player::Show (const WorkerImpl::Arg &arg)
 	return Worker::RV_Normal;
 }
 
+Worker::WorkItemRV Player::ShowSongs (const WorkerImpl::Arg &arg)
+{
+	const char *const psz_func {__func__};
+	
+	std::ostringstream osMsg;
+	{
+		osMsg << "arg:     " << arg << ".\n";
+		osMsg << "Showing: " << *this << ".\n";
+		
+		const int cc_iSong {4};
+		
+		{
+			std::ostringstream os;
+			{
+				for (std::size_t i = 0, n = _contHistory.size (); i < n; ++i)
+					os << std::setw (cc_iSong) << i << ": " << _contHistory.at (i) << ".\n";
+			}
+			
+			osMsg << IndentWithTitle (os.str (), "History:");
+		}
+		
+		{
+			std::ostringstream os;
+			{
+				for (std::size_t i = 0, n = _contSongs.size (); i < n; ++i)
+					os << std::setw (cc_iSong) << i << ": " << _contSongs.at (i) << ".\n";
+			}
+			
+			osMsg << IndentWithTitle (os.str (), "Songs:");
+		}
+	}
+	
+	if (_bPlaying)
+	{
+		const auto tNow      {arg.ThenCrtTime ()};
+		const auto dtElapsed {tNow - _tLastPlaying};
+		
+		const int cc_dt {7};
+		osMsg
+			<< "tNow      "       << std::setw (cc_dt) << tNow.time_since_epoch ().count () << ", "
+			<< "dtElapsed "       << std::setw (cc_dt) << dtElapsed               .count () << ".\n";
+	}
+				
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
+	return Worker::RV_Normal;
+}
+
 Worker::WorkItemRV Player::Verb (const WorkerImpl::Arg &arg, unsigned iVerb)
 {
 	iVerb = std::min (iVerb, 1u);

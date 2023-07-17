@@ -69,6 +69,9 @@ The `"help"` command is going to show a list of available commands. Commands are
 |`Show\|ShowPlayer`
 |Displays debugging information about the Player.
 
+|`ShowSongs`
+|Displays songs.
+
 |`Verb <level>`
 |Sets the verbosity level for the Player (`0` or `1`). Initial value: `0`.
 
