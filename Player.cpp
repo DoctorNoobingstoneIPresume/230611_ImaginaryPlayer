@@ -5,8 +5,11 @@
 #include <sstream>
 #include <iomanip>
 
+#include <utility>
 #include <algorithm>
 #include <tuple>
+
+#include <cstdlib>
 
 namespace ImaginaryPlayer
 {
@@ -26,6 +29,7 @@ Player::Player (const LogContext &logcontext):
 	_tLastPlaying   {Now ()},
 	_bNewSong       {true},
 	_bRepeat        {false},
+	_bRandom        {false},
 	_dtPing         {0}
 {}
 
@@ -45,7 +49,9 @@ std::ostream &Player::Put (std::ostream &os) const
 			<< ", "
 			<< "song " << std::setw (cc_iSong) << static_cast <std::ptrdiff_t> (_iWithinSongs) << " of " << std::setw (cc_iSong) << _contSongs.size ()
 			<< ", "
-			<< "_bRepeat " << _bRepeat;
+			<< "_bRepeat " << _bRepeat
+			<< ", "
+			<< "_bRandom " << _bRandom;
 		
 		if (_iWithinHistory < _contHistory.size () || _iWithinSongs < _contSongs.size ())
 		{
@@ -130,6 +136,22 @@ Player::NextRV Player::Next (const WorkerImpl::Arg &arg)
 				Azzert (_iWithinSongs == _contSongs.size ());
 				if (_bRepeat)
 					_iWithinSongs = 0;
+			}
+			
+			if (_bRandom)
+			{
+				if (const std::size_t nRem = _contSongs.size () - _iWithinSongs)
+				{
+					// [2023-07-18] TODO: Support for more than RAND_MAX remaining songs.
+					const std::size_t iWhich = _iWithinSongs + std::rand () % nRem;
+					if (iWhich != _iWithinSongs)
+					{
+						Azzert (iWhich > _iWithinSongs);
+						
+						using std::swap;
+						swap (_contSongs.at (iWhich), _contSongs.at (_iWithinSongs));
+					}
+				}
 			}
 			
 			bNewSong = true;
@@ -456,6 +478,13 @@ Worker::WorkItemRV Player::Repeat (const WorkerImpl::Arg &arg, bool bRepeat)
 	}
 	
 	_bRepeat = bRepeat;
+	
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::Random (const WorkerImpl::Arg &arg, bool bRandom)
+{
+	_bRandom = bRandom;
 	
 	return Worker::RV_Normal;
 }

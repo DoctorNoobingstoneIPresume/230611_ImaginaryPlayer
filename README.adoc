@@ -86,6 +86,9 @@ The `"help"` command is going to show a list of available commands. Commands are
 
 |`Repeat (0\|1)`
 |Toggles the "repeat" mode.
+
+|`Random (0\|1)`
+|Toggles the "random" mode.
 |===
 
 Example of `<song-description>`:

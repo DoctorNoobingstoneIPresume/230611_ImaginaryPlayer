@@ -146,6 +146,9 @@ int main ()
 							"    Repeat (0|1)\n"
 							"        Toggles the \"repeat\" mode.\n"
 							"\n"
+							"    Random (0|1)\n"
+							"        Toggles the \"random\" mode.\n"
+							"\n"
 							"Example of <song-description>:\n"
 							"    " << songExample << "\n"
 							"\n"
@@ -270,6 +273,25 @@ int main ()
 				}
 				else
 					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Repeat: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
+			}
+			else
+			if (Command_sTextLo == "random")
+			{
+				if (const auto opti = ExtractIntegral (Command_isRestOfLine))
+				{
+					const bool bValue (*opti);
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Random " << bValue << "...\n"; });
+					
+					Player_spWorker->AddWorkItem
+					(
+						std::make_shared <Worker::WorkItem>
+						(
+							[=] () { return spPlayer->Random (arg, bValue); }
+						)
+					);
+				}
+				else
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Random: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
 			if (Command_sTextLo == "prev")
