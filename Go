@@ -9,7 +9,7 @@ ytimeq ()
 Main ()
 {
 	printf "Producing the documentation...\n{\n"
-	which asciidoctor && asciidoctor -b html5 "README.adoc" -o "README.html" || true
+	which asciidoctor && ytimeq asciidoctor -b html5 "README.adoc" -o "README.html" || true
 	printf "}\n\n"
 	
 	printf "Building...\n{\n"
