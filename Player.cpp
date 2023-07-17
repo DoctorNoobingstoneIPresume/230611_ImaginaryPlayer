@@ -19,6 +19,7 @@ Player::Player (const LogContext &logcontext):
 		Song {}.SetSongName ("Demo Song of 3 seconds").SetLength (std::chrono::seconds {3}),
 		Song {}.SetSongName ("Demo Song of 6 seconds").SetLength (std::chrono::seconds {6})
 	},
+	_iWithinSongs   {0},
 	_iWithinHistory (-1),
 	_dtWithinSong   {0},
 	_bPlaying       {true},
@@ -36,13 +37,13 @@ std::ostream &Player::Put (std::ostream &os) const
 			<< ", "
 			<< "_tLastPlaying " << _tLastPlaying.time_since_epoch ().count ()
 			<< ", "
-			<< "history " << static_cast <std::ptrdiff_t> ( _iWithinHistory) << " of " << _contHistory.size ()
+			<< "history " << static_cast <std::ptrdiff_t> (_iWithinHistory) << " of " << _contHistory.size ()
 			<< ", "
-			<< "_bPlaying " << _bPlaying << ", songs " << _contSongs.size ();
+			<< "_bPlaying " << _bPlaying << ", song " << static_cast <std::ptrdiff_t> (_iWithinSongs) << " of " << _contSongs.size ();
 		
-		if (! _contSongs.empty ())
+		if (_iWithinSongs < _contSongs.size ())
 		{
-			const Song &song {_contSongs.front ()};
+			const Song &song {_contSongs.at (_iWithinSongs)};
 			osTmp
 				<< ", "
 				<< "first " << song;
@@ -54,6 +55,89 @@ std::ostream &Player::Put (std::ostream &os) const
 	}
 	
 	return os << osTmp.str ();
+}
+
+class Player::NextRV
+{
+ private:
+	      bool                      _bNewSong;
+	      std::string               _sShortMsg;
+
+ public:
+	bool              GetNewSongFlag ()                       const;
+	NextRV           &SetNewSongFlag (bool value);
+	
+	std::string       GetShortMsg    ()                       const;
+	lyb::string_view  GetShortMsgQ   ()                       const;
+	NextRV           &SetShortMsg    (lyb::string_view value);
+
+ public:
+	NextRV ();
+};
+
+bool                      Player::NextRV::GetNewSongFlag ()                       const { return _bNewSong; }
+Player::NextRV           &Player::NextRV::SetNewSongFlag (bool value)                   { _bNewSong = value; return *this; }
+
+std::string               Player::NextRV::GetShortMsg    ()                       const { return _sShortMsg; }
+lyb::string_view          Player::NextRV::GetShortMsgQ   ()                       const { return _sShortMsg; }
+Player::NextRV           &Player::NextRV::SetShortMsg    (lyb::string_view value)       { _sShortMsg = lyb::ViewToString (value); return *this; }
+
+Player::NextRV::NextRV ():
+	_bNewSong {false}
+{}
+
+Player::NextRV Player::Next (const WorkerImpl::Arg &arg)
+{
+	const Song *pSong;
+	{
+		if      (_iWithinHistory < _contHistory.size ()) pSong = &_contHistory.at (_iWithinHistory);
+		else if (_iWithinSongs   < _contSongs  .size ()) pSong = &_contSongs  .at (_iWithinSongs)  ;
+		else                                             pSong = nullptr;
+	}
+	
+	std::ostringstream osShortMsg;
+	{
+		if (pSong)
+			osShortMsg << "We have finished playing " << *pSong << ".\n";
+	}
+	
+	bool bNewSong {false};
+	{
+		if (_iWithinHistory < _contHistory.size ())
+		{
+			Azzert (pSong);
+			
+			++_iWithinHistory;
+			bNewSong = true;
+		}
+		else
+		if (_iWithinSongs < _contSongs.size ())
+		{
+			Azzert (pSong);
+			
+			_iWithinHistory = -1;
+			_contHistory.push_back (*pSong);
+			
+			++_iWithinSongs;
+			if (_iWithinSongs >= _contSongs.size ())
+			{
+				Azzert (_iWithinSongs == _contSongs.size ());
+			}
+			
+			bNewSong = true;
+		}
+		else
+			Azzert (! pSong);
+		
+		if (bNewSong)
+		{
+			_tLastPlaying = arg.ThenCrtTime ();
+			_dtWithinSong = Duration {0};
+			_bNewSong     = true;
+		}
+	}
+	
+	return NextRV {}.SetNewSongFlag (bNewSong).SetShortMsg (osShortMsg.str ());
 }
 
 class Player::OnElapsedTimeRV
@@ -114,12 +198,12 @@ Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 			const auto tNow {arg.ThenCrtTime ()};
 			Azzert (tNow >= _tLastPlaying);
 			
-			while (! _contSongs.empty () && _tLastPlaying < tNow)
+			while ((_iWithinHistory < _contHistory.size () || _iWithinSongs < _contSongs.size ()) && _tLastPlaying < tNow)
 			{
-				const Song &song {_contSongs.front ()};
+				const Song &song {_iWithinHistory < _contHistory.size () ? _contHistory.at (_iWithinHistory) : _contSongs.at (_iWithinSongs)};
 				const auto dtSong {song.GetLength ()}; Azzert (_dtWithinSong <= dtSong);
 				//if (! _dtWithinSong.count ())
-				//	osShortMsg << "We have startedd playing " << _contSongs.front () << ".\n";
+				//	osShortMsg << "We have startedd playing " << song << ".\n";
 				
 				const auto dtSongRemaining {dtSong - _dtWithinSong};
 				
@@ -140,17 +224,9 @@ Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 				{
 					if (_dtWithinSong >= dtSong)
 					{
-						if (_iWithinHistory >= _contHistory.size ())
-							_contHistory.push_back (song);
-						else
-							++_iWithinHistory;
-						
-						osShortMsg << "We have finished playing " << song << ".\n";
-						
-						_contSongs.pop_front ();
-						_dtWithinSong = Duration {0};
-						bSongHasChanged = true;
-						_bNewSong = true;
+						const auto result = Next (arg);
+						osShortMsg << result.GetShortMsg ();
+						bSongHasChanged = result.GetNewSongFlag ();
 					}
 				}
 				
@@ -161,9 +237,9 @@ Player::OnElapsedTimeRV Player::OnElapsedTime (const WorkerImpl::Arg &arg)
 					break;
 			}
 			
-			if (! _contSongs.empty ())
+			if (_iWithinHistory < _contHistory.size () || _iWithinSongs < _contSongs.size ())
 			{
-				const Song &song {_contSongs.front ()};
+				const Song &song {_iWithinHistory < _contHistory.size () ? _contHistory.at (_iWithinHistory) : _contSongs.at (_iWithinSongs)};
 				const auto dtSong {song.GetLength ()}; Azzert (_dtWithinSong <= dtSong);
 				rv = dtSong - _dtWithinSong;
 				
@@ -298,7 +374,7 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 		osMsg << "Initial: " << *this << ".\n";
 	}
 	
-	if (_bPlaying && _contSongs.empty ())
+	if (_bPlaying && _iWithinHistory >= _contHistory.size () && _iWithinSongs >= _contSongs.size ())
 	{
 		osMsg << "Updating _tLastPlaying...\n";
 		_tLastPlaying = arg.ThenCrtTime ();
@@ -324,8 +400,9 @@ Worker::WorkItemRV Player::Play (const WorkerImpl::Arg &arg, bool bPlaying)
 	if (! _bPlaying && bPlaying)
 	{
 		_tLastPlaying = arg.ThenCrtTime ();
-		if (! _dtWithinSong.count ())
-			ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << "We have startedd playing " << _contSongs.front () << ".\n"; });
+		// [2023-07-17] TODO: Fix/eliminate the following:
+		//if (! _dtWithinSong.count ())
+		//	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << "We have startedd playing " << _contSongs.front () << ".\n"; });
 	}
 	
 	_bPlaying = bPlaying;
@@ -337,20 +414,8 @@ Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
 {
 	if (bNext)
 	{
-		if (! _contSongs.empty ())
-		{
-			const Song &song {_contSongs.front ()};
-			
-			if (_iWithinHistory >= _contHistory.size ())
-				_contHistory.push_back (song);
-			else
-				++_iWithinHistory;
-			
-			_contSongs.pop_front ();
-			_tLastPlaying = arg.ThenCrtTime ();
-			_dtWithinSong = Duration {0};
-			_bNewSong     = true;
-		}
+		// [2023-07-18] TODO: Consider the return value of the following call:
+		Next (arg);
 	}
 	else
 	{
@@ -362,7 +427,8 @@ Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
 			if (_iWithinHistory)
 				--_iWithinHistory;
 			
-			_contSongs.push_front (_contHistory.at (_iWithinHistory));
+			// [2023-07-17] The following is no longer needed -- the logic now selects a `Song` either from `_contHistory` or `_contSongs`.
+			//_contSongs.push_front (_contHistory.at (_iWithinHistory));
 		}
 		
 		_tLastPlaying = arg.ThenCrtTime ();

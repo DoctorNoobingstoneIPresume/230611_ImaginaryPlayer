@@ -92,7 +92,7 @@ END_MESSAGE
 		}
 		
 		printf ("%s\n", IndentWithTitle (ArrayToString (\@adtResults), 'adtResults'));
-		Azzert (array_eq (\@adtResults, [3000, 6000, 1000, 6000, 3000, 3000, 3000, 6000, 1000]));
+		Azzert (array_eq (\@adtResults, [3000, 6000, 1000, 6000, 3000, 3000, 6000, 1000]));
 	}
 }
 

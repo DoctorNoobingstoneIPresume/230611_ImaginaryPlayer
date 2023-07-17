@@ -21,6 +21,7 @@ class Player
 	      LogContext                        _logcontext;
 	      unsigned                          _iVerb;
 	      std::deque <Song>                 _contSongs;
+	      std::size_t                       _iWithinSongs;
 	      std::deque <Song>                 _contHistory;
 	      std::size_t                       _iWithinHistory;
 	      Duration                          _dtWithinSong;
@@ -36,6 +37,9 @@ class Player
 	explicit Player (const LogContext &logcontext);
 
  private:
+	class NextRV;
+	NextRV                            Next            (const WorkerImpl::Arg &arg);
+	
 	class OnElapsedTimeRV;
 	OnElapsedTimeRV                   OnElapsedTime   (const WorkerImpl::Arg &arg);
 
