@@ -143,6 +143,9 @@ int main ()
 							"    (Prev|Next)\n"
 							"        Jumps to the previous song or the next song (in history).\n"
 							"\n"
+							"    Repeat (0|1)\n"
+							"        Toggles the \"repeat\" mode.\n"
+							"\n"
 							"Example of <song-description>:\n"
 							"    " << songExample << "\n"
 							"\n"
@@ -248,6 +251,25 @@ int main ()
 				}
 				else
 					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Sleep: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
+			}
+			else
+			if (Command_sTextLo == "repeat")
+			{
+				if (const auto opti = ExtractIntegral (Command_isRestOfLine))
+				{
+					const bool bValue (*opti);
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Repeat " << bValue << "...\n"; });
+					
+					Player_spWorker->AddWorkItem
+					(
+						std::make_shared <Worker::WorkItem>
+						(
+							[=] () { return spPlayer->Repeat (arg, bValue); }
+						)
+					);
+				}
+				else
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Repeat: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
 			if (Command_sTextLo == "prev")

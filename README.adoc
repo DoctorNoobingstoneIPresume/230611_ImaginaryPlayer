@@ -79,10 +79,13 @@ The `"help"` command is going to show a list of available commands. Commands are
 |Toggles the "playing" state.
 
 |`Sleep <number-of-milliseconds>`
-| Puts the main thread to sleep => commands are not going to be processed for the specified duration. (This command is useful for functional tests.)
+|Puts the main thread to sleep => commands are not going to be processed for the specified duration. (This command is useful for functional tests.)
 
 |`Prev\|Next`
-| Jumps to the previous song or to the next song (in history).
+|Jumps to the previous song or to the next song (in history).
+
+|`Repeat (0\|1)`
+|Toggles the "repeat" mode.
 |===
 
 Example of `<song-description>`:

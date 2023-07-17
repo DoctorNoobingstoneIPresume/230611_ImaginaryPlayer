@@ -28,6 +28,7 @@ class Player
 	      bool                              _bPlaying;
 	      TimePoint                         _tLastPlaying;
 	      bool                              _bNewSong;
+	      bool                              _bRepeat;
 	      Duration                          _dtPing;
 
  public:
@@ -54,6 +55,7 @@ class Player
 	Worker::WorkItemRV                AddSong         (const WorkerImpl::Arg &arg, const Song &song);
 	Worker::WorkItemRV                Play            (const WorkerImpl::Arg &arg, bool bPlaying);
 	Worker::WorkItemRV                PrevNext        (const WorkerImpl::Arg &arg, bool bNext);
+	Worker::WorkItemRV                Repeat          (const WorkerImpl::Arg &arg, bool bRepeat);
 };
 
 std::ostream &operator<< (std::ostream &os, const Player &object);

@@ -25,6 +25,7 @@ Player::Player (const LogContext &logcontext):
 	_bPlaying       {true},
 	_tLastPlaying   {Now ()},
 	_bNewSong       {true},
+	_bRepeat        {false},
 	_dtPing         {0}
 {}
 
@@ -32,18 +33,23 @@ std::ostream &Player::Put (std::ostream &os) const
 {
 	std::ostringstream osTmp;
 	{
+		const int cc_iSong {4};
 		osTmp
 			<< "_iVerb " << _iVerb
 			<< ", "
 			<< "_tLastPlaying " << _tLastPlaying.time_since_epoch ().count ()
 			<< ", "
-			<< "history " << static_cast <std::ptrdiff_t> (_iWithinHistory) << " of " << _contHistory.size ()
+			<< "history " << std::setw (cc_iSong) << static_cast <std::ptrdiff_t> (_iWithinHistory) << " of " << std::setw (cc_iSong) << _contHistory.size ()
 			<< ", "
-			<< "_bPlaying " << _bPlaying << ", song " << static_cast <std::ptrdiff_t> (_iWithinSongs) << " of " << _contSongs.size ();
+			<< "_bPlaying " << _bPlaying
+			<< ", "
+			<< "song " << std::setw (cc_iSong) << static_cast <std::ptrdiff_t> (_iWithinSongs) << " of " << std::setw (cc_iSong) << _contSongs.size ()
+			<< ", "
+			<< "_bRepeat " << _bRepeat;
 		
-		if (_iWithinSongs < _contSongs.size ())
+		if (_iWithinHistory < _contHistory.size () || _iWithinSongs < _contSongs.size ())
 		{
-			const Song &song {_contSongs.at (_iWithinSongs)};
+			const Song &song {_iWithinHistory < _contHistory.size () ? _contHistory.at (_iWithinHistory) : _contSongs.at (_iWithinSongs)};
 			osTmp
 				<< ", "
 				<< "first " << song;
@@ -122,6 +128,8 @@ Player::NextRV Player::Next (const WorkerImpl::Arg &arg)
 			if (_iWithinSongs >= _contSongs.size ())
 			{
 				Azzert (_iWithinSongs == _contSongs.size ());
+				if (_bRepeat)
+					_iWithinSongs = 0;
 			}
 			
 			bNewSong = true;
@@ -435,6 +443,19 @@ Worker::WorkItemRV Player::PrevNext (const WorkerImpl::Arg &arg, bool bNext)
 		_dtWithinSong = Duration {0};
 		_bNewSong     = true;
 	}
+	
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::Repeat (const WorkerImpl::Arg &arg, bool bRepeat)
+{
+	if (! _bRepeat && bRepeat && _bPlaying && _iWithinHistory >= _contHistory.size () && _iWithinSongs >= _contSongs.size ())
+	{
+		_iWithinSongs = 0;
+		_tLastPlaying = arg.ThenCrtTime ();
+	}
+	
+	_bRepeat = bRepeat;
 	
 	return Worker::RV_Normal;
 }
