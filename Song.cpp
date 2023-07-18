@@ -29,6 +29,18 @@ Song             &Song::SetCodecName   (lyb::string_view value)       { _sCodecN
 Duration          Song::GetLength      ()                       const { return _dtLength; }
 Song             &Song::SetLength      (Duration value)               { _dtLength = value; return *this; }
 
+std::size_t Song::hash_value () const noexcept
+{
+	return
+		std::hash <std::string> {} (_sArtistName)
+		^
+		std::hash <std::string> {} (_sSongName)
+		^
+		std::hash <std::string> {} (_sCodecName)
+		^
+		std::hash <TimeRep>     {} (_dtLength.count ());
+}
+
 Song::Song ():
 	_dtLength {0}
 {}
@@ -168,6 +180,16 @@ bool operator== (const Song &x, const Song &y)
 bool operator!= (const Song &x, const Song &y)
 {
 	return ! (x == y);
+}
+
+}
+
+namespace std
+{
+
+std::size_t hash <ImaginaryPlayer::Song>::operator() (const ImaginaryPlayer::Song &song) const noexcept
+{
+	return song.hash_value ();
 }
 
 }

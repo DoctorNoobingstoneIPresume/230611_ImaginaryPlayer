@@ -8,6 +8,7 @@
 #include <utility>
 #include <algorithm>
 #include <tuple>
+#include <unordered_set>
 
 #include <cstdlib>
 
@@ -531,6 +532,41 @@ Worker::WorkItemRV Player::RemoveSong (const WorkerImpl::Arg &arg, std::size_t i
 		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), osTitle.str ()); });
 	}
 	
+	
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::RemoveDups (const WorkerImpl::Arg &arg)
+{
+	const char *const psz_func {__func__};
+	
+	std::ostringstream osMsg;
+	
+	std::unordered_set <Song> setSongs;
+	
+	// [2023-07-18] TODO: Optimize the following ? But then we would have to redo the logic from `RemoveSong` here.
+	// [2023-07-18] Note: Yes, we have to recompute `_contSongs.size ()` on each iteration. :'(
+	const std::size_t nSongs0 {_contSongs.size ()};
+	for (std::size_t iWithinSongs = 0; iWithinSongs < _contSongs.size (); ++iWithinSongs)
+	{
+		while (iWithinSongs < _contSongs.size ())
+		{
+			const Song &song {_contSongs.at (iWithinSongs)};
+			
+			const auto result {setSongs.insert (song)};
+			if (result.second)
+				break;
+			else
+				// [2023-07-18] TODO: Consider the result of `RemoveSong` ?
+				RemoveSong (arg, iWithinSongs);
+		}
+	}
+	
+	const std::size_t nSongs1 {_contSongs.size ()};
+	Azzert (nSongs1 <= nSongs0);
+	osMsg << "Number of songs (initial - removed = final): " << nSongs0 << " - " << nSongs0 - nSongs1 << " = " << nSongs1 << ".\n";
+	
+	ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
 	
 	return Worker::RV_Normal;
 }

@@ -6,6 +6,7 @@
 
 #include <iosfwd>
 #include <string>
+#include <functional>
 
 namespace ImaginaryPlayer
 {
@@ -35,6 +36,9 @@ class Song
 	Song             &SetLength      (Duration value);
 
  public:
+	std::size_t hash_value () const noexcept;
+
+ public:
 	Song ();
 
  public:
@@ -47,5 +51,19 @@ std::istream &operator>> (std::istream &is,       Song &object);
 
 bool operator== (const Song &x, const Song &y);
 bool operator!= (const Song &x, const Song &y);
+
+}
+
+namespace std
+{
+
+template <>
+struct hash <ImaginaryPlayer::Song>
+{
+	typedef ImaginaryPlayer::Song argument_type;
+	typedef std::size_t           result_type;
+	
+	std::size_t operator() (const ImaginaryPlayer::Song &song) const noexcept;
+};
 
 }

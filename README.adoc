@@ -81,6 +81,9 @@ The `"help"` command is going to show a list of available commands. Commands are
 |`(Remove\|RemoveSong) <song-index>`
 |Removes the specified song from the queue. The index is the 0-based number displayed by `ShowSongs`.
 
+|`RemoveDups`
+|Removes duplicate songs from the queue.
+
 |`Play\|Pause`
 |Toggles the "playing" state.
 

@@ -140,6 +140,9 @@ int main ()
 							"        Removes the specified song from the queue.\n"
 							"        <song-index> is the 0-based number displayed by ShowSongs.\n"
 							"\n"
+							"    RemoveDups\n"
+							"        Removes duplicate songs from the queueu.\n"
+							"\n"
 							"    (Play|Pause)\n"
 							"        Toggles the \"playing\" state.\n"
 							"\n"
@@ -262,6 +265,17 @@ int main ()
 				}
 				else
 					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "RemoveSong: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
+			}
+			else
+			if (Command_sTextLo == "removedups")
+			{
+				Player_spWorker->AddWorkItem
+				(
+					std::make_shared <Worker::WorkItem>
+					(
+						[=] () { return spPlayer->RemoveDups (arg); }
+					)
+				);
 			}
 			else
 			if (Command_sTextLo == "pause")
