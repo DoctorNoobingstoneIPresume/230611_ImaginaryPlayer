@@ -20,7 +20,7 @@ adder_2003@yahoo.com -- Thank you so !! (-:
 Bash script for the impatient:
 
 ```
-set -o pipefail; readarray -t as < <(ls *.cpp | grep -Piv "_UT"); printf "%s\n" "${as[@]}"; xtimeq g++ -pthread -std="gnu++17" -g "${as[@]}" -o "Main" 2>&1 | tee "_go"
+set -o pipefail; readarray -t as < <(ls *.cpp | grep -Piv "_UT"); printf "%s\n" "${as[@]}"; g++ -pthread -std="gnu++17" -g "${as[@]}" -o "Main" 2>&1 | tee "_go"
 ```
 
 Alternatively, we can use the custom build system (with some hardcoding, currently):
