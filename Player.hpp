@@ -55,6 +55,7 @@ class Player
 	Worker::WorkItemRV                ShowSongs       (const WorkerImpl::Arg &arg);
 	Worker::WorkItemRV                Verb            (const WorkerImpl::Arg &arg, unsigned iVerb);
 	Worker::WorkItemRV                AddSong         (const WorkerImpl::Arg &arg, const Song &song);
+	Worker::WorkItemRV                RemoveSong      (const WorkerImpl::Arg &arg, std::size_t iSongToRemove);
 	Worker::WorkItemRV                Play            (const WorkerImpl::Arg &arg, bool bPlaying);
 	Worker::WorkItemRV                PrevNext        (const WorkerImpl::Arg &arg, bool bNext);
 	Worker::WorkItemRV                Repeat          (const WorkerImpl::Arg &arg, bool bRepeat);

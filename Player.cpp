@@ -467,7 +467,70 @@ Worker::WorkItemRV Player::AddSong (const WorkerImpl::Arg &arg, const Song &song
 	_contSongs.push_back (song);
 	
 	if (_iVerb)
-		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), psz_func); });
+	{
+		std::ostringstream osTitle;
+		{
+			osTitle << psz_func << " (" << song << ")";
+		}
+		
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), osTitle.str ()); });
+	}
+	
+	return Worker::RV_Normal;
+}
+
+Worker::WorkItemRV Player::RemoveSong (const WorkerImpl::Arg &arg, std::size_t iSongToRemove)
+{
+	const char *const psz_func {__func__};
+	
+	std::ostringstream osMsg;
+	{
+		osMsg << "RemoveSong (" << iSongToRemove << "):\n";
+	}
+	
+	if (iSongToRemove < _contSongs.size ())
+	{
+		osMsg << "Song to remove: " << std::setw (4) << iSongToRemove << ": " << _contSongs.at (iSongToRemove) << ".\n";
+		
+		if (_iWithinHistory >= _contHistory.size ())
+		{
+			if (iSongToRemove <= _iWithinSongs)
+			{
+				
+				if (iSongToRemove == _iWithinSongs)
+				{
+					// [2023-07-18] TODO: Consider the result of calling `Next`.
+					Next (arg);
+				}
+				
+				if (iSongToRemove <= _iWithinSongs)
+				{
+					if (_iWithinSongs)
+						--_iWithinSongs;
+					// [2023-07-18]
+					//   Resetting `_bPlaying` is not needed -- playback automagically stops when no songs are left --
+					//   and should not be done              -- playback *should* resume when songs are added.
+					//else
+					//	_bPlaying = false;
+				}
+			}
+		}
+		
+		_contSongs.erase (_contSongs.begin () + iSongToRemove);
+	}
+	else
+		osMsg << "Index of song to remove " << iSongToRemove << " is out of range [0, " << _contSongs.size () << ").\n";
+	
+	if (_iVerb)
+	{
+		std::ostringstream osTitle;
+		{
+			osTitle << psz_func << " (" << iSongToRemove << ")";
+		}
+		
+		ComposeAndLog (_logcontext, [&] (std::ostream &os) { os << IndentWithTitle (osMsg.str (), osTitle.str ()); });
+	}
+	
 	
 	return Worker::RV_Normal;
 }

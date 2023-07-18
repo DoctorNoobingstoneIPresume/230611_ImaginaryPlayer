@@ -13,7 +13,7 @@
 #include <locale>
 
 #include <algorithm>
-
+#include <limits>
 #include <string>
 
 #include <thread>
@@ -136,6 +136,10 @@ int main ()
 							"    AddSong (<song-description>)\n"
 							"        Adds the specified song to the queue.\n"
 							"\n"
+							"    (Remove|RemoveSong) <song-index>\n"
+							"        Removes the specified song from the queue.\n"
+							"        <song-index> is the 0-based number displayed by ShowSongs.\n"
+							"\n"
 							"    (Play|Pause)\n"
 							"        Toggles the \"playing\" state.\n"
 							"\n"
@@ -235,6 +239,29 @@ int main ()
 						[=] () { return spPlayer->AddSong (arg, song); }
 					)
 				);
+			}
+			else
+			if (Command_sTextLo == "removesong" || Command_sTextLo == "remove")
+			{
+				if (const auto opti = ExtractIntegral (Command_isRestOfLine))
+				{
+					if (*opti >= 0 && *opti <= std::numeric_limits <std::size_t>::max ())
+					{
+						ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "RemoveSong: index " << std::setw (7) << *opti << "...\n"; });
+						
+						Player_spWorker->AddWorkItem
+						(
+							std::make_shared <Worker::WorkItem>
+							(
+								[=] () { return spPlayer->RemoveSong (arg, *opti); }
+							)
+						);
+					}
+					else
+						ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "RemoveSong: The specified index (" << *opti << ") is outside the range of `std::size_t`.\n"; });
+				}
+				else
+					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "RemoveSong: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
 			if (Command_sTextLo == "pause")

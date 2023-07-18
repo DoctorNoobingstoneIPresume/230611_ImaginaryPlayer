@@ -78,6 +78,9 @@ The `"help"` command is going to show a list of available commands. Commands are
 |`AddSong \(<song-description>\)`
 |Adds the specified song to the queue.
 
+|`(Remove\|RemoveSong) <song-index>`
+|Removes the specified song from the queue. The index is the 0-based number displayed by `ShowSongs`.
+
 |`Play\|Pause`
 |Toggles the "playing" state.
 
