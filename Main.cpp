@@ -15,19 +15,99 @@
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <deque>
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
 
-int main ()
+#include <cstring>
+
+int main (int argc, char **argv)
 {
 	std::cout << "Hello, Imaginary World !\n" << std::flush;
 	const std::locale loc {std::cout.getloc ()};
 	const std::ctype <char> &ctype {std::use_facet <std::ctype <char>> (loc)};
 	
+	std::deque <std::string> contCommands;
+	{
+		unsigned iState = 0;
+		std::string sPending;
+		for (int argi = 1; argi < argc; ++argi)
+		{
+			const lyb::string_view sv0 {argv [argi]};
+			      lyb::string_view sv  {sv0};
+			if (! iState)
+			{
+				Azzert (sPending.empty ());
+				std::size_t nDashes {0};
+				{
+					while (! sv.empty () && sv.front () == '-')
+						{ sv.remove_prefix (1); ++nDashes; }
+				}
+				
+				if (nDashes)
+				{
+					if (! std::strcmp (sv.data (), "help"))
+					{
+						std::cout <<
+							"Usage: <program-name> <option>*\n"
+							"\n"
+							"Options:\n"
+							"    -ex \"<command>\"\n"
+							"        Executes the specified <command>.\n"
+							"        Example: `<program-name> -ex help`\n"
+							"\n"
+							"Support: adder_2003@yahoo.com -- Thank you. (-:\n"
+							"\n";
+						
+						return 0;
+					}
+					else
+					if (! std::strcmp (sv.data (), "ex"))
+						{ sPending = lyb::ViewToString (sv); iState = 10; }
+					else
+					{
+						std::cout << "Unknown option cmdline arg: \"" << sv0 << "\" !\n";
+						return 1;
+					}
+				}
+				else
+				{
+					std::cout << "Unexpected non-option cmdline arg: \"" << sv0 << "\" !\n";
+					return 1;
+				}
+			}
+			else
+			if (iState == 10)
+			{
+				Azzert (! sPending.empty ());
+				
+				if (sPending == "ex")
+					contCommands.push_back (lyb::ViewToString (sv));
+				else
+					Azzert (0);
+				
+				sPending.clear ();
+				iState = 0;
+			}
+			else
+				Azzert (0);
+		}
+	}
+	
 	using namespace ImaginaryPlayer;
+	
+	{
+		std::ostringstream os;
+		{
+			for (const auto &s: contCommands)
+				os << s << '\n';
+		}
+		
+		std::cout << IndentWithTitle (os.str (), "contCommands:");
+	}
 	
 	{
 		std::ostream *const posPreviouslyTied {std::cin.tie (nullptr)};
@@ -57,7 +137,15 @@ int main ()
 		{
 			ComposeAndLog (logcontext, [] (std::ostream &os) { os << ">\n"; });
 			std::string Command_sLine;
+			do
 			{
+				if (! contCommands.empty ())
+				{
+					Command_sLine = contCommands.    front ();
+					                contCommands.pop_front ();
+					break;
+				}
+				
 				if (! std::cin)
 					{ ComposeAndLog (logcontext, [] (std::ostream &os) { std::cout << "cin had already failed !\n"; }); return 1; }
 				
@@ -66,7 +154,7 @@ int main ()
 				
 				if (! std::getline (std::cin, Command_sLine))
 					{ ComposeAndLog (logcontext, [] (std::ostream &os) { std::cout << "getline has failed !\n"; }); return 1; }
-			}
+			} while (0);
 			
 			ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Processing command line: `" << Command_sLine << "`.\n"; });
 			

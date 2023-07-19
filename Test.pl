@@ -23,6 +23,62 @@ sub RunWithInput
 	return $sOutput;
 }
 
+sub EscapeArg
+{
+	my $sArg0 = @_ ? shift : Azzert ();
+	
+	my $sRet = '';
+	{
+		for (my $ic = 0; $ic < length ($sArg0); ++$ic)
+		{
+			my $c = substr ($sArg0, $ic, 1);
+			if ($c eq '"')
+				{ $sRet .= "\\\""; }
+			else
+				{ $sRet .= $c; }
+		}
+	}
+	
+	return $sRet;
+}
+
+sub RunWithCommands
+{
+	my $rasCommands = @_ ? shift : Azzert ();
+	
+	printf (IndentWithTitle (ArrayToString ($rasCommands), "Commands"));
+	
+	my @asArgs;
+	{
+		foreach my $sCommand (@$rasCommands)
+		{
+			push (@asArgs, '-ex');
+			push (@asArgs, $sCommand);
+		}
+	}
+	
+	# [2023-07-19]
+	#my $sOutput = system ("_Build/Main", @asArgs);
+	my $sCmdLine = "_Build/Main";
+	{
+		foreach my $sArg0 (@asArgs)
+		{
+			my $sArg1 = EscapeArg ($sArg0);
+			{
+				if (index ($sArg1, ' ') >= 0)
+					{ $sArg1 = "\"${sArg1}\""; }
+			}
+			
+			$sCmdLine .= " ${sArg1}";
+		}
+		
+		$sCmdLine .= " 2>&1 | tee TestOutput.txt";
+	}
+	
+	my $sOutput = `${sCmdLine}`;
+	return $sOutput;
+}
+
 sub array_eq
 {
 	my $rax = @_ ? shift : Azzert ();
@@ -63,12 +119,30 @@ Next
 Sleep 2000
 Exit
 END_MESSAGE
-
+			
+			my @asCommands =
+			(
+				'Sleep 10000',
+				'AddSong (length 1000)', 'Sleep 100',
+				'Prev'                 , 'Sleep 100',
+				'Prev'                 , 'Sleep 100',
+				'Prev'                 , 'Sleep 100',
+				'Next'                 , 'Sleep 100',
+				'Next'                 , 'Sleep 100',
+				'Next'                 , 'Sleep 100',
+				'Sleep 2000',
+				'Exit'
+			);
+			
 			my $s1;
 			{
-				if (1)
+				if (0)
 				{
 					$s1 = RunWithInput ($s0);
+				}
+				elsif (1)
+				{
+					$s1 = RunWithCommands (\@asCommands);
 				}
 				else
 				{
