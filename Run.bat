@@ -4,7 +4,7 @@ printf "Running...\n{\n"
 if not exist "_Build/Main.exe"      goto Missing
 if      exist "_go_IncompleteBuild" goto IncompleteBuild
 
-xtimeq "_Build/Main.exe" "Input_Board.txt" "Input_Moves.txt" %* 2>&1 | tee "_run" | tee -a "_run_a"
+xtimeq "_Build/Main.exe" -ex "help" %* 2>&1 | tee "_run" | tee -a "_run_a"
 printf "}\n\n"
 goto :EOF
 

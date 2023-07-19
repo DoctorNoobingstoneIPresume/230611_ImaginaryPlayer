@@ -8,9 +8,21 @@ ytimeq ()
 
 Main ()
 {
+	printf "Producing the documentation...\n{\n"
+	which asciidoctor && ytimeq asciidoctor -b html5 "README.adoc" -o "README.html" || true
+	printf "}\n\n"
+	
 	printf "Building...\n{\n"
 	local Builder_sFolder="230611_MyProjectBuilder_PerlEdition"
-	CXX='g++' CXXFLAGS='-std="gnu++17" -D"IMAGINARYPLAYER_STRING_VIEW_BOOST=1"' ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
+	
+	IMAGINARYPLAYER_STRING_VIEW_BOOST="${IMAGINARYPLAYER_STRING_VIEW_BOOST:-0}" \
+	IMAGINARYPLAYER_OPTIONAL_BOOST="${IMAGINARYPLAYER_OPTIONAL_BOOST:-0}" \
+	BOOST_ROOT="${BOOST_ROOT:-}" \
+	CXX="${CXX:-g++}" \
+	CXXFLAGS="${CXXFLAGS} -pthread -std=gnu++17 -DIMAGINARYPLAYER_STRING_VIEW_BOOST=${IMAGINARYPLAYER_STRING_VIEW_BOOST} -DIMAGINARYPLAYER_OPTIONAL_BOOST=${IMAGINARYPLAYER_OPTIONAL_BOOST}" \
+	LDFLAGS="${LDFLAGS} -pthread" \
+	ytimeq perl -I "${Builder_sFolder}/" -I "${Builder_sFolder}/221227_PerlLib_02h/" "${Builder_sFolder}/Go.pl" "$@"
+	
 	printf "}\n\n"
 }
 

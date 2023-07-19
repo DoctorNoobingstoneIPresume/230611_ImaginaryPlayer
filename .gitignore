@@ -6,3 +6,6 @@ _run
 _run_a
 *.stackdump
 README.html
+
+TestInput.txt
+TestOutput.txt

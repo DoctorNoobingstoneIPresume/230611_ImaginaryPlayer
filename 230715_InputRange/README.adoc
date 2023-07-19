@@ -1,0 +1,14 @@
+= [2023-07-15] `InputRange <...>`
+
+`InputRange <...>` and all code based on it has been deprecated.
+The main reason is that `std::basic_istream <...>` already has all the features needed and even more.
+For example, `std::basic_istream <...>` has `putback`,
+which I had not foreseen for `InputRange <...>` (probably requiring the Strategy design pattern), but which I have found out to be needed.
+
+`InputRange <...>` used to be a model of the Iterator design pattern,
+similar to ranges in the D programming language and to ranges in Boost and newer versions of STL
+in that a range object holds two iterators,
+but different in that `InputRange <...>` is a base class and `InputRange <...>`-derived objects are meant to be used polymorphically.
+
+`std::basic_istream <...>` already used the Strategy design pattern.
+The `std::basic_streambuf <...>` is the base of the hierarchy of objects used to implement `std::basic_istream <...>` functionality.

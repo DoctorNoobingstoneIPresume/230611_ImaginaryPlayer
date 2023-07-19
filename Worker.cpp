@@ -1,7 +1,12 @@
 #include "Worker.hpp"
 #include "WorkerImpl.hpp"
 
+#ifndef IMAGINARYPLAYER_Worker_iDebug
+ #define IMAGINARYPLAYER_Worker_iDebug 0
+#endif
+
 #include <iostream>
+#include <iomanip>
 #include <utility>
 
 namespace ImaginaryPlayer
@@ -31,29 +36,33 @@ Worker::ThreadFn
 	//class spWorker;
 	Worker *const loc_pWorker {loc_spWorker.get ()};
 	
-	std::cout << "{ Worker::ThreadFn\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "{ Worker::ThreadFn\n" << std::flush;
 	
 	for (;;)
 	{
 		// [2023-06-17] TODO: Remove the periodic wake-ups (in case of `dtWait` being < 0) ?
 		const auto tNow = Now ();
 		
-		const auto arg = WorkerImpl::Arg {}.Now (tNow);
+		const auto arg = WorkerImpl::Arg {};
 		
 		const Duration dtWait {loc_pWorker->_pImpl ? loc_pWorker->_pImpl->GetTimeToWait (arg) : Duration {-1}};
+		const bool     dtWait_b {dtWait >= Duration {0}};
 		
 		std::cv_status status;
 		
 		std::unique_lock <std::mutex> lock (loc_pWorker->_mtx);
-		while (loc_pWorker->_contspWorkItems.empty ())
+		for (std::size_t iRetry = 0; loc_pWorker->_contspWorkItems.empty (); ++iRetry)
 		{
-			status = loc_pWorker->_cv.wait_until
-			(
-				lock,
-				tNow + (dtWait >= Duration {0} ? dtWait : Duration {1000 * 60})
-			);
+			const auto dtFor {dtWait_b ? dtWait : Duration {60 * 1000}};
 			
-			if (status == std::cv_status::timeout && dtWait >= Duration {0})
+			// [2023-07-14] We are trying to debug excessive use of CPU which happens sometimes (as guided by GDB's attaching to the process):
+			if (IMAGINARYPLAYER_Worker_iDebug) if (iRetry >= 10 && loc_pWorker->_pImpl) std::cout << "dtFor " << std::setw (7) << dtFor.count () << "...\n" << std::flush;
+			
+			status = loc_pWorker->_cv.wait_until (lock, tNow + dtFor);
+			
+			// [2023-07-14] BUGFIX: Without this fix, we used to enter "busy waiting" (the "excessive use of CPU" mentioned above) after the timeout:
+			//if (status == std::cv_status::timeout && dtWait_b)
+			if (status == std::cv_status::timeout)
 				break;
 		}
 		
@@ -65,6 +74,14 @@ Worker::ThreadFn
 		const auto loc_contspWorkItems = std::move (loc_pWorker->_contspWorkItems);
 		
 		lock.unlock ();
+		
+		if (loc_pWorker->_pImpl)
+		{
+			const bool bWorkToDo {! loc_contspWorkItems.empty ()};
+			const auto rv {loc_pWorker->_pImpl->OnWakeUp (arg, bWorkToDo)};
+			if ((rv & Break_Mask) != Break_0)
+				break;
+		}
 		
 		bool bEndRequested {false};
 		for (const auto &spWorkItem: loc_contspWorkItems)
@@ -81,7 +98,7 @@ Worker::ThreadFn
 		if (bEndRequested)
 			break;
 		
-		if (status == std::cv_status::timeout && dtWait >= Duration {0})
+		if (status == std::cv_status::timeout && dtWait_b)
 		{
 			Azzert (loc_pWorker->_pImpl);
 			const auto rv {loc_pWorker->_pImpl->OnTimeout (arg)};
@@ -90,7 +107,7 @@ Worker::ThreadFn
 		}
 	}
 	
-	std::cout << "} Worker::ThreadFn\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "} Worker::ThreadFn\n" << std::flush;
 }
 
 void
@@ -105,7 +122,7 @@ Worker::AddWorkItem
 
 ScopedWorkerThread::~ScopedWorkerThread ()
 {
-	std::cout << "Joinable " << _thread.joinable () << ".\n" << std::flush;
+	if (IMAGINARYPLAYER_Worker_iDebug) std::cout << "Joinable " << _thread.joinable () << ".\n" << std::flush;
 	_spWorker->AddWorkItem (nullptr);
 	_thread.join ();
 }

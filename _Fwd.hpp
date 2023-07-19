@@ -5,8 +5,9 @@
 
 #include <utility>
 #include <chrono>
-#include <cstdint>
 
+#include <cstdint>
+#include <cstdlib>
 
 namespace ImaginaryPlayer
 {
@@ -18,7 +19,7 @@ using std:: int8_t; using std:: int16_t; using std:: int32_t; using std:: int64_
 
 // Representationf and type of time units:
 
-typedef int TimeRep;
+typedef int64_t TimeRep;
 typedef std::ratio <1, 1000> TimePeriod;
 typedef std::chrono::duration <TimeRep, TimePeriod> Duration;
 typedef std::chrono::time_point <std::chrono::steady_clock, Duration> TimePoint;
@@ -126,3 +127,33 @@ ScopeGuard <F> MakeScopeGuard (F &&f)
 	#define Azzert     ImaginaryPlayer_Azzert
 #endif
 
+
+// nelems:
+
+// [2023-07-06] TODO:
+//   This implementation of nelems prevents `a` from being a variable with user-defined `operator[]`
+//   (by using `0 [a]` instead of `(a) [0]`) (and this is good),
+//   but it still allows `a` to be a raw pointer
+//   (and this is bad).
+//   Only built-in arrays should be allowed.
+#define nelems(a) ((sizeof (a) / sizeof (0 [a])))
+
+
+// numcmp:
+
+template <typename T>
+int numcmp (T x, T y)
+{
+	if (x == y)
+		return  0;
+	else
+	if (x < y)
+		return -1;
+	else
+		return +1;
+}
+
+
+// cc_dt:
+
+const int cc_dt {7};

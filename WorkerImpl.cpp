@@ -1,14 +1,36 @@
 #include "WorkerImpl.hpp"
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 namespace ImaginaryPlayer
 {
 
-TimePoint        WorkerImpl::Arg::Now ()                const { return _tNow; }
-WorkerImpl::Arg &WorkerImpl::Arg::Now (TimePoint value)       { _tNow = value; return *this; }
+TimePoint        WorkerImpl::Arg::ThenCrtTime ()                const { return _tNow; }
+WorkerImpl::Arg &WorkerImpl::Arg::ThenCrtTime (TimePoint value)       { _tNow = value; return *this; }
 
 WorkerImpl::Arg::Arg ():
 	_tNow {Now ()}
 {}
+
+std::ostream &WorkerImpl::Arg::Put (std::ostream &os) const
+{
+	std::ostringstream osTmp;
+	{
+		osTmp
+			<< "("
+			<< "_tNow " << _tNow.time_since_epoch ().count ()
+			<< ")";
+	}
+	
+	return os << osTmp.str ();
+}
+
+std::ostream &operator<< (std::ostream &os, const WorkerImpl::Arg &object)
+{
+	return object.Put (os);
+}
 
 WorkerImpl::~WorkerImpl ()
 = default;
@@ -19,6 +41,13 @@ Duration WorkerImpl::GetTimeToWait (const Arg &arg)
 	// [2023-06-15] TODO: A facility for azzertions (alwayz-enabled-assertions).
 	// [2023-06-17] Done.
 	Azzert (rv >= Duration {-1});
+	return rv;
+}
+
+Worker::WorkItemRV WorkerImpl::OnWakeUp (const Arg &arg, bool bWorkToDo)
+{
+	const auto rv = Do_OnWakeUp (arg, bWorkToDo);
+	Azzert ((rv & Worker::All_Mask) == rv);
 	return rv;
 }
 
