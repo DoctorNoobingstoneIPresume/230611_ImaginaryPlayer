@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <locale>
 
@@ -224,6 +225,9 @@ int main (int argc, char **argv)
 							"    AddSong (<song-description>)\n"
 							"        Adds the specified song to the queue.\n"
 							"\n"
+							"    AddSongFromFile <filename>\n"
+							"        Adds the song described in the specified file to the queue.\n"
+							"\n"
 							"    (Remove|RemoveSong) <song-index>\n"
 							"        Removes the specified song from the queue.\n"
 							"        <song-index> is the 0-based number displayed by ShowSongs.\n"
@@ -247,7 +251,7 @@ int main (int argc, char **argv)
 							"    Random (0|1)\n"
 							"        Toggles the \"random\" mode.\n"
 							"\n"
-							"Example of <song-description>:\n"
+							"Example of <song-description> (note the parentheses, please):\n"
 							"    " << songExample << "\n"
 							"\n"
 							"Contact/support: adder_2003@yahoo.com. Thank you soooo !! (-:\n"
@@ -299,11 +303,56 @@ int main (int argc, char **argv)
 					ComposeAndLog (logcontext, [&] (std::ostream &os) { os << "Verb: We have not been able to extract an integral from \"" << Command_sRestOfLine << "\" !\n"; });
 			}
 			else
-			if (Command_sTextLo == "addsong")
+			if (Command_sTextLo == "addsong" || Command_sTextLo == "addsongfromfile")
 			{
 				Song song;
 				{
-					if (! (Command_isRestOfLine >> song))
+					std::string sPathName;
+					std::ifstream isFile;
+					std::istream *pis {nullptr};
+					{
+						if (Command_sTextLo == "addsongfromfile")
+						{
+							const auto opttoken {ExtractToken (Command_isRestOfLine, &cursor, true)};
+							if (! opttoken)
+							{
+								ComposeAndLog
+								(
+									logcontext,
+									[&] (std::ostream &os)
+										{ os << "We have not been able to obtain the filename from \"" << Command_sRestOfLine << "\" !\n"; }
+								);
+								
+								continue;
+							}
+							
+							sPathName = opttoken->GetText ();
+							isFile.open (sPathName);
+							if (! isFile)
+							{
+								ComposeAndLog
+								(
+									logcontext,
+									[&] (std::ostream &os)
+										{ os << "We have not been able to open \"" << sPathName << "\" !\n"; }
+								);
+								
+								continue;
+							}
+								
+							pis = &isFile;
+						}
+						else
+						if (Command_sTextLo == "addsong")
+							pis = &Command_isRestOfLine;
+						else
+							Azzert (0);
+					}
+					
+					if (! pis)
+						continue;
+					
+					if (! (*pis >> song))
 					{
 						ComposeAndLog
 						(
@@ -311,7 +360,9 @@ int main (int argc, char **argv)
 							[&] (std::ostream &os)
 							{
 								os
-									<< "We have not been able to process the `Song` description from \"" << Command_sRestOfLine << "\" !\n"
+									<< "We have not been able to process the `Song` description from \""
+									<< (pis == &Command_isRestOfLine ? Command_sRestOfLine : sPathName)
+									<< "\" !\n"
 									<< "Example of an expected `Song` description:\n"
 									<< "    " << songExample << "\n";
 							}

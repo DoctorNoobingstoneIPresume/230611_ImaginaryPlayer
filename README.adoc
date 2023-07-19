@@ -116,6 +116,9 @@ Options:
 |`AddSong \(<song-description>\)`
 |Adds the specified song to the queue.
 
+|`AddSongFromFile <file-name>`
+|Adds the song described in the specified file to the queue.
+
 |`(Remove\|RemoveSong) <song-index>`
 |Removes the specified song from the queue. The index is the 0-based number displayed by `ShowSongs`.
 
@@ -138,7 +141,7 @@ Options:
 |Toggles the "random" mode.
 |===
 
-Example of `<song-description>`:
+Example of `<song-description>` (note the parentheses, please):
 
 ```
 (artist "Madonna", song "Frozen", codec "MP3", length 329000)

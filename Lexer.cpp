@@ -16,7 +16,7 @@ namespace ImaginaryPlayer
 
 lyb::optional <Token>
 ExtractToken
-(std::istream &is, Cursor *pCursor)
+(std::istream &is, Cursor *pCursor, bool bFileName)
 {
 	Token token;
 	bool bSuccess {true};
@@ -28,6 +28,26 @@ ExtractToken
 		{
 			const auto c_int {is.get ()};
 			const char c     {static_cast <char> (c_int == std::char_traits <char>::eof () ? 0 : c_int)};
+			
+			#if IMAGINARYPLAYER_Lexer_iDebug
+			{
+				std::ostringstream os;
+				{
+					os
+						<< "iState " << std::setw (2) << iState << ", "
+						<< std::hex << std::uppercase << std::setfill ('0')
+						<< "c " << std::setw (2) << c_int << "h \'" << c << "\', "
+						<< "is.rdstate () " << std::setw (2) << is.rdstate () << "h.\n";
+					if (0)
+						os
+							<< "badbit "  << std::ios_base::badbit  << "h, "
+							<< "failbit " << std::ios_base::failbit << "h, "
+							<< "eofbit "  << std::ios_base::eofbit  << "h.\n";
+				}
+				
+				std::cout << os.str ();
+			}
+			#endif
 			
 			const bool bTokenIsEmpty {token.GetTextQ ().empty ()};
 			
@@ -47,7 +67,14 @@ ExtractToken
 				if (c == '\"')
 					{ if (pCursor) token.SetFrom (*pCursor); iState = 11; }
 				else
-					{ if (pCursor) token.SetFrom (*pCursor); token.AddText (c); break; }
+				{
+					if (pCursor) token.SetFrom (*pCursor); token.AddText (c);
+					
+					if (bFileName)
+						iState = 10;
+					else
+						break;
+				}
 			}
 			else
 			if (iState == 10)
@@ -64,7 +91,12 @@ ExtractToken
 				if (c == '\"')
 					iState = 11;
 				else
-					{ is.putback (c); break; }
+				{
+					if (bFileName)
+						token.AddText (c);
+					else
+						{ is.putback (c); break; }
+				}
 			}
 			else
 			if (iState == 11)
@@ -97,6 +129,14 @@ ExtractToken
 			Azzert (c);
 		}
 	}
+	
+	#if IMAGINARYPLAYER_Lexer_iDebug
+	{
+		std::cout << "bSuccess " << bSuccess << ".\n";
+		if (bSuccess)
+			std::cout << token << "\n";
+	}
+	#endif
 	
 	if (bSuccess)
 	{

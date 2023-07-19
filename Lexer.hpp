@@ -17,7 +17,7 @@ class Cursor;
 
 lyb::optional <Token>
 ExtractToken
-(std::istream &is, Cursor *pCursor = nullptr);
+(std::istream &is, Cursor *pCursor = nullptr, bool bFileName = false);
 
 // [2023-07-07]
 //   `getline_paren (my_istream, my_string, '(', ')')` reads input starting with (possibly whitespace, then) '(' until ')'.
