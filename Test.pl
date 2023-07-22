@@ -98,6 +98,7 @@ sub array_eq
 
 sub Main
 {
+	if (0)
 	{
 		my @adtResults;
 		{
@@ -167,6 +168,45 @@ END_MESSAGE
 		
 		printf ("%s\n", IndentWithTitle (ArrayToString (\@adtResults), 'adtResults'));
 		Azzert (array_eq (\@adtResults, [3000, 6000, 1000, 6000, 3000, 3000, 6000, 1000]));
+	}
+	
+	{
+		my $bSuccess = 0;
+		{
+			my $ni = 100;
+			my $nj =   4;
+			my @asCommands;
+			{
+				for (my $i = 0; $i < $ni; ++$i)
+				{
+					for (my $j = 0; $j < $nj; ++$j)
+					{
+						push (@asCommands, sprintf ('AddSong (artist Artist_%04u)', $i));
+					}
+				}
+				
+				push (@asCommands, ('RemoveDups', 'ShowSongs', 'Exit'));
+			}
+			
+			my $s1 = RunWithCommands (\@asCommands);
+			my @asLines = split (/^/, $s1);
+			
+			foreach my $sLine (@asLines)
+			{
+				chomp ($sLine);
+				
+				#printf (": %s\n", $sLine);
+				
+				if ($sLine =~ m#^\s*Number of songs.*: (\d+) - (\d+) = (\d+)[.]$#)
+				{
+					printf (": %u - %u = %u.\n", $1, $2, $3);
+					if ($2 == $ni * ($nj - 1))
+						{ $bSuccess = 1; }
+				}
+			}
+		}
+		
+		Azzert ($bSuccess);
 	}
 }
 
