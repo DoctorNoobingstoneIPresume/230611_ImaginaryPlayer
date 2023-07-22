@@ -61,7 +61,7 @@ ExtractToken
 				if (ctype.is (std::ctype_base::space, c))
 					;
 				else
-				if (ctype.is (std::ctype_base::alnum, c))
+				if (ctype.is (std::ctype_base::alnum, c) || c == '_')
 					{ if (pCursor) token.SetFrom (*pCursor); token.AddText (c); iState = 10; }
 				else
 				if (c == '\"')
@@ -85,7 +85,7 @@ ExtractToken
 				if (ctype.is (std::ctype_base::space, c))
 					{ is.putback (c); break; }
 				else
-				if (ctype.is (std::ctype_base::alnum, c))
+				if (ctype.is (std::ctype_base::alnum, c) || c == '_')
 					token.AddText (c);
 				else
 				if (c == '\"')

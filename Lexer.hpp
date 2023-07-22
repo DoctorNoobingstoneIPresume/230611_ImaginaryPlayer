@@ -87,7 +87,7 @@ getline_paren
 				if (ctype.is (std::ctype_base::space, c))
 					;
 				else
-				if (ctype.is (std::ctype_base::alnum, c))
+				if (ctype.is (std::ctype_base::alnum, c) || c == '_')
 					iState = 10;
 				else
 				if (c == '\"')
